@@ -2,7 +2,7 @@
 /**
  * Mantis MediaWiki extension.
  *
- * ---> DESCRIPTION HERE
+ * Mantis Bug Tracker integration
  *
  * Written by Helmut K. C. Tessarek
  * https://github.com/tessus/mwExtensionMantis
@@ -33,7 +33,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'name'        => 'Mantis',
 	'author'      => 'Helmut K. C. Tessarek',
 	'url'         => 'https://github.com/tessus/mwExtensionMantis',
-	'description' => 'Test',
+	'description' => 'Mantis Bug Tracker integration',
 	'version'     => '0.9'
 );
 
