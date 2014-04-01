@@ -115,7 +115,7 @@ function renderMantis( $input, $args, $mwParser )
 	}
 	//$mwParser->disableCache();
 
-	$columnNames = 'id:b.id,category:c.name,severity:b.severity,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary';
+	$columnNames = 'id:b.id,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary';
 
 	$conf['bugid']          = NULL;
 	$conf['table']          = 'sortable';
@@ -226,7 +226,7 @@ function renderMantis( $input, $args, $mwParser )
 
 	// build the SQL query
 	$tabprefix = $wgMantisConf['DBprefix'];
-	$query = "select b.id as id, c.name as category, b.severity as severity, b.status as status, u.username as username, b.date_submitted as created, b.last_updated as updated, b.summary as summary from ${tabprefix}category_table c inner join ${tabprefix}bug_table b on (b.category_id = c.id) left outer join ${tabprefix}user_table u on (u.id = b.handler_id) ";
+	$query = "select b.id as id, c.name as category, b.severity as severity, b.priority as priority, b.status as status, u.username as username, b.date_submitted as created, b.last_updated as updated, b.summary as summary from ${tabprefix}category_table c inner join ${tabprefix}bug_table b on (b.category_id = c.id) left outer join ${tabprefix}user_table u on (u.id = b.handler_id) ";
 
 	if ($conf['bugid'] == NULL)
 	{
@@ -329,6 +329,7 @@ function renderMantis( $input, $args, $mwParser )
 						$output .= sprintf("[%s%d %07d]\n", $link, $row[$colname], $row[$colname]);
 						break;
 					case 'severity':
+					case 'priority':
 						$output .= sprintf($format, $color, 'center');
 						$output .= getKeyOrValue($row[$colname], $mantis[$colname])."\n";
 						break;
