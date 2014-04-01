@@ -34,7 +34,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'author'      => 'Helmut K. C. Tessarek',
 	'url'         => 'https://github.com/tessus/mwExtensionMantis',
 	'description' => 'Mantis Bug Tracker integration',
-	'version'     => '0.9.4'
+	'version'     => '0.9.5'
 );
 
 // Configuration variables
@@ -128,6 +128,7 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['dateformat']     = 'Y-m-d';
 	$conf['suppresserrors'] = false;
 	$conf['suppressinfo']   = false;
+	$conf['summarylength']  = NULL;
 
 	$tableOptions   = array('sortable', 'standard', 'noborder');
 	$orderbyOptions = createArray($columnNames); 
@@ -173,9 +174,10 @@ function renderMantis( $input, $args, $mwParser )
 				}
 				break;
 			case 'count':
-				if (is_numeric($arg))
+			case 'summarylength':
+				if (is_numeric($arg) && ($arg > 0))
 				{
-					$conf['count'] = intval($arg);
+					$conf[$type] = intval($arg);
 				}
 				break;
 			case 'order':
@@ -347,7 +349,12 @@ function renderMantis( $input, $args, $mwParser )
 						break;	
 					case 'summary':
 						$output .= sprintf($format, $color, 'left');
-						$output .= $row[$colname]."\n";
+						$summary = $row[$colname];
+						if ($conf['summarylength'] && (strlen($summary) > $conf['summarylength']))
+						{
+							$summary = trim(substr($row[$colname], 0, $conf['summarylength']))."...";
+						}
+						$output .= $summary."\n";
 						break;
 					case 'updated':
 					case 'created':
