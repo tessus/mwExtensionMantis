@@ -196,33 +196,15 @@ function renderMantis( $input, $args, $mwParser )
 				}
 				break;
 			case 'suppresserrors':
-				if ($arg == 'true' || $arg == 'yes' || $arg == 'on') 
-				{
-					$conf['suppresserrors'] = true;
-				} 
-				elseif ($arg == 'false' || $arg == 'no' || $arg == 'off') 
-				{
-					$conf['suppresserrors'] = false;
-				}
-				break;
 			case 'color':
-				if ($arg == 'true' || $arg == 'yes' || $arg == 'on') 
-				{
-					$conf['color'] = true;
-				} 
-				elseif ($arg == 'false' || $arg == 'no' || $arg == 'off') 
-				{
-					$conf['color'] = false;
-				}
-				break;
 			case 'header':
 				if ($arg == 'true' || $arg == 'yes' || $arg == 'on') 
 				{
-					$conf['header'] = true;
+					$conf[$type] = true;
 				} 
 				elseif ($arg == 'false' || $arg == 'no' || $arg == 'off') 
 				{
-					$conf['header'] = false;
+					$conf[$type] = false;
 				}
 				break;
 			default:
