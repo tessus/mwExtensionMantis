@@ -218,6 +218,7 @@ function renderMantis( $input, $args, $mwParser )
 				$columns = explode(',', $arg);
 				foreach ($columns as $column)
 				{
+					$column = trim($column);
 					if (array_key_exists($column, $orderbyOptions))
 					{
 						$showNew[] = $column;
