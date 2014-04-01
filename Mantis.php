@@ -34,7 +34,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'author'      => 'Helmut K. C. Tessarek',
 	'url'         => 'https://github.com/tessus/mwExtensionMantis',
 	'description' => 'Mantis Bug Tracker integration',
-	'version'     => '0.9.3'
+	'version'     => '0.9.4'
 );
 
 // Configuration variables
@@ -208,6 +208,9 @@ function renderMantis( $input, $args, $mwParser )
 				{
 					$conf[$type] = false;
 				}
+				break;
+			case 'dateformat':
+				$conf['dateformat'] = $arg;
 				break;
 			default:
 				break;
