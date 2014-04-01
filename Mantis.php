@@ -23,7 +23,7 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
-if ( !defined('MEDIAWIKI') ) 
+if ( !defined('MEDIAWIKI') )
 {
 	die( 'This file is a MediaWiki extension, it is not a valid entry point' );
 }
@@ -34,7 +34,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'author'      => 'Helmut K. C. Tessarek',
 	'url'         => 'https://github.com/tessus/mwExtensionMantis',
 	'description' => 'Mantis Bug Tracker integration',
-	'version'     => '0.9.5'
+	'version'     => '1.0'
 );
 
 // Configuration variables
@@ -49,7 +49,6 @@ $wgMantisConf['MaxCacheTime']   = 60*60*0;     // How long to cache pages in sec
 $wgMantisConf['PriorityString'] = '10:none,20:low,30:normal,40:high,50:urgent,60:immediate';                           // $g_priority_enum_string
 $wgMantisConf['StatusString']   = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed'; // $g_status_enum_string
 $wgMantisConf['StatusColors']   = '10:fcbdbd,20:e3b7eb,30:ffcd85,40:fff494,50:c2dfff,80:d2f5b0,90:c9ccc4';             // $g_status_colors
-//$wgMantisConf['StatusColors']   = '10:ef2929,20:75507b,30:f57900,40:fce94f,50:729fcf,80:8ae234,90:babdb6';             // $g_status_colors
 $wgMantisConf['SeverityString'] = '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block';        // $g_severity_enum_string
 
 // create an array from a properly formatted string
@@ -100,20 +99,19 @@ $wgHooks['ParserFirstCallInit'][] = 'wfMantis';
 
 function wfMantis( &$parser ) 
 {
-	$parser->setHook( 'mantis', 'renderMantis' );
+	$parser->setHook('mantis', 'renderMantis');
 	return true;
 }
 
 // The callback function for converting the input text to HTML output
-function renderMantis( $input, $args, $mwParser ) 
+function renderMantis( $input, $args, $mwParser )
 {
 	global $wgMantisConf;
 
-	if ( $wgMantisConf['MaxCacheTime'] !== false ) 
+	if ($wgMantisConf['MaxCacheTime'] !== false)
 	{
 		$mwParser->getOutput()->updateCacheExpiry($wgMantisConf['MaxCacheTime']);
 	}
-	//$mwParser->disableCache();
 
 	$columnNames = 'id:b.id,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary';
 
@@ -123,15 +121,16 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['color']          = true;
 	$conf['status']         = 'open';
 	$conf['count']          = NULL;
-	$conf['orderby']        = 'b.last_updated'; 
+	$conf['orderby']        = 'b.last_updated';
 	$conf['order']          = 'desc';
 	$conf['dateformat']     = 'Y-m-d';
 	$conf['suppresserrors'] = false;
 	$conf['suppressinfo']   = false;
 	$conf['summarylength']  = NULL;
+	$conf['show']           = array('id','category','severity','status','updated','summary');
 
 	$tableOptions   = array('sortable', 'standard', 'noborder');
-	$orderbyOptions = createArray($columnNames); 
+	$orderbyOptions = createArray($columnNames);
 
 	$mantis['status']   = createArray($wgMantisConf['StatusString']);
 	$mantis['color']    = createArray($wgMantisConf['StatusColors']);
@@ -181,7 +180,7 @@ function renderMantis( $input, $args, $mwParser )
 				}
 				break;
 			case 'order':
-				if ($arg == 'asc' || $arg == 'ascending') 
+				if ($arg == 'asc' || $arg == 'ascending')
 				{
 					$conf['order'] = 'asc';
 				} 
@@ -202,11 +201,11 @@ function renderMantis( $input, $args, $mwParser )
 			case 'suppressinfo':
 			case 'color':
 			case 'header':
-				if ($arg == 'true' || $arg == 'yes' || $arg == 'on') 
+				if ($arg == 'true' || $arg == 'yes' || $arg == 'on')
 				{
 					$conf[$type] = true;
 				} 
-				elseif ($arg == 'false' || $arg == 'no' || $arg == 'off') 
+				elseif ($arg == 'false' || $arg == 'no' || $arg == 'off')
 				{
 					$conf[$type] = false;
 				}
@@ -214,6 +213,20 @@ function renderMantis( $input, $args, $mwParser )
 			case 'dateformat':
 				$conf['dateformat'] = $arg;
 				break;
+			case 'show':
+				$showNew = array();
+				$columns = explode(',', $arg);
+				foreach ($columns as $column)
+				{
+					if (array_key_exists($column, $orderbyOptions))
+					{
+						$showNew[] = $column;
+					}
+				}
+				if (!empty($conf['show']))
+				{
+					$conf['show'] = $showNew;
+				}
 			default:
 				break;
 		} // end main switch()
@@ -258,8 +271,6 @@ function renderMantis( $input, $args, $mwParser )
 	{
 		$query .= "where b.id = $conf[bugid]";
 	}
-
-	$showColumns = array('id','category','severity','status','updated','summary');
 	
 	// connect to mantis database
 	$db = new mysqli($wgMantisConf['DBserver'], $wgMantisConf['DBuser'], $wgMantisConf['DBpassword'], $wgMantisConf['DBname']);
@@ -303,7 +314,7 @@ function renderMantis( $input, $args, $mwParser )
 		// create table header - use an array to specify which columns to display
 		if ($conf['header'])
 		{
-			foreach ($showColumns as $colname) 
+			foreach ($conf['show'] as $colname)
 			{
 				$output .= "!".ucfirst($colname)."\n";
 			}
@@ -312,11 +323,11 @@ function renderMantis( $input, $args, $mwParser )
 		$format = "|style=\"padding-left:10px; padding-right:10px; color: black; background-color: #%s; text-align:%s\" |";
 
 		// create table rows
-		while ($row = $result->fetch_assoc()) 
+		while ($row = $result->fetch_assoc())
 		{
 			$output .= "|-\n";
 
-			foreach ($showColumns as $colname)
+			foreach ($conf['show'] as $colname)
 			{
 				if ($conf['color'])
 				{
