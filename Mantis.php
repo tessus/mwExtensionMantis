@@ -233,13 +233,18 @@ function renderMantis( $input, $args, $mwParser )
 	} // end foreach()
 
 	// build the link url
-	if (substr($wgMantisConf['Url'], -1) == '/')
+	$link = NULL;
+
+	if (!empty($wgMantisConf['Url']))
 	{
-		$link = $wgMantisConf['Url'].$view;
-	}
-	else
-	{
-		$link = $wgMantisConf['Url'].'/'.$view;
+		if (substr($wgMantisConf['Url'], -1) == '/')
+		{
+			$link = $wgMantisConf['Url'].$view;
+		}
+		else
+		{
+			$link = $wgMantisConf['Url'].'/'.$view;
+		}
 	}
 
 	// build the SQL query
@@ -342,7 +347,14 @@ function renderMantis( $input, $args, $mwParser )
 				{
 					case 'id':
 						$output .= sprintf($format, $color, 'center');
-						$output .= sprintf("[%s%d %07d]\n", $link, $row[$colname], $row[$colname]);
+						if ($link)
+						{
+							$output .= sprintf("[%s%d %07d]\n", $link, $row[$colname], $row[$colname]);
+						}
+						else
+						{
+							$output .= sprintf("%07d\n", $row[$colname]);
+						}
 						break;
 					case 'severity':
 					case 'priority':
