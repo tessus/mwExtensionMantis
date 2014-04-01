@@ -131,10 +131,10 @@ function renderMantis( $input, $args, $mwParser )
 	$tableOptions   = array('sortable', 'standard', 'noborder');
 	$orderbyOptions = createArray($columnNames); 
 
-	$statusString   = createArray($wgMantisConf['StatusString']);
-	$statusColors   = createArray($wgMantisConf['StatusColors']);
-	$priorityString = createArray($wgMantisConf['PriorityString']);
-	$severityString = createArray($wgMantisConf['SeverityString']);
+	$mantis['status']   = createArray($wgMantisConf['StatusString']);
+	$mantis['color']    = createArray($wgMantisConf['StatusColors']);
+	$mantis['priority'] = createArray($wgMantisConf['PriorityString']);
+	$mantis['severity'] = createArray($wgMantisConf['SeverityString']);
 
 	$view = "view.php?id=";
 
@@ -160,7 +160,7 @@ function renderMantis( $input, $args, $mwParser )
 				}
 				break;			
 			case 'status':
-				if (((in_array($arg, $statusString)) !== FALSE ) || $arg == 'open')
+				if (((in_array($arg, $mantis['status'])) !== FALSE ) || $arg == 'open')
 				{
 					$conf['status'] = $arg;
 				}
@@ -248,12 +248,12 @@ function renderMantis( $input, $args, $mwParser )
 	{
 		if ($conf['status'] == 'open')
 		{
-			$status = getKeyOrValue('closed', $statusString);
+			$status = getKeyOrValue('closed', $mantis['status']);
 			$cond = "<> $status";
 		}
 		else
 		{
-			$status = getKeyOrValue($conf['status'], $statusString);
+			$status = getKeyOrValue($conf['status'], $mantis['status']);
 			$cond = "= $status";
 		}
 
@@ -323,7 +323,7 @@ function renderMantis( $input, $args, $mwParser )
 			{
 				if ($conf['color'])
 				{
-					$color = $statusColors[$row['status']];
+					$color = $mantis['color'][$row['status']];
 				}
 				else
 				{
@@ -338,7 +338,7 @@ function renderMantis( $input, $args, $mwParser )
 						break;
 					case 'severity':
 						$output .= sprintf($format, $color, 'center');
-						$output .= getKeyOrValue($row[$colname], $severityString)."\n";
+						$output .= getKeyOrValue($row[$colname], $mantis[$colname])."\n";
 						break;
 					case 'status':
 						$output .= sprintf($format, $color, 'center');
@@ -347,7 +347,7 @@ function renderMantis( $input, $args, $mwParser )
 						{
 							$assigned = "(${username})";
 						}
-						$output .= sprintf("%s %s\n", getKeyOrValue($row[$colname], $statusString), $assigned);
+						$output .= sprintf("%s %s\n", getKeyOrValue($row[$colname], $mantis[$colname]), $assigned);
 						break;	
 					case 'summary':
 						$output .= sprintf($format, $color, 'left');
