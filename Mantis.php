@@ -34,7 +34,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'author'      => 'Helmut K. C. Tessarek',
 	'url'         => 'https://github.com/tessus/mwExtensionMantis',
 	'description' => 'Mantis Bug Tracker integration',
-	'version'     => '0.9'
+	'version'     => '0.9.1'
 );
 
 // Configuration variables
@@ -154,7 +154,9 @@ function renderMantis( $input, $args, $mwParser )
 			case 'bugid':
 				if (is_numeric($arg))
 				{
-					$conf['bugid'] = intval($arg);
+					$conf['bugid']  = intval($arg);
+					$conf['color']  = false;
+					$conf['header'] = false;
 				}
 				break;			
 			case 'status':
