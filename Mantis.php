@@ -34,7 +34,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'author'      => 'Helmut K. C. Tessarek',
 	'url'         => 'https://github.com/tessus/mwExtensionMantis',
 	'description' => 'Mantis Bug Tracker integration',
-	'version'     => '0.9.2'
+	'version'     => '0.9.3'
 );
 
 // Configuration variables
@@ -127,6 +127,7 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['order']          = 'desc';
 	$conf['dateformat']     = 'Y-m-d';
 	$conf['suppresserrors'] = false;
+	$conf['suppressinfo']   = false;
 
 	$tableOptions   = array('sortable', 'standard', 'noborder');
 	$orderbyOptions = createArray($columnNames); 
@@ -196,6 +197,7 @@ function renderMantis( $input, $args, $mwParser )
 				}
 				break;
 			case 'suppresserrors':
+			case 'suppressinfo':
 			case 'color':
 			case 'header':
 				if ($arg == 'true' || $arg == 'yes' || $arg == 'on') 
@@ -261,6 +263,10 @@ function renderMantis( $input, $args, $mwParser )
 	if ($db->connect_errno)
 	{
 		$errmsg = sprintf("Connect to [%s] failed: %s\n", $wgMantisConf['DBname'], $db->connect_error);
+		if ($conf['suppresserrors'])
+		{
+			$errmsg = '';
+		}
 		return $errmsg;
 	}
 
@@ -279,6 +285,10 @@ function renderMantis( $input, $args, $mwParser )
 			}
 			$result->free();
 			$db->close();
+			if ($conf['suppressinfo'])
+			{
+				$errmsg = '';
+			}
 			return $errmsg;
 		}
 
