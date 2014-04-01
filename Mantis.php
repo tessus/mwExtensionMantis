@@ -34,7 +34,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'author'      => 'Helmut K. C. Tessarek',
 	'url'         => 'https://github.com/tessus/mwExtensionMantis',
 	'description' => 'Mantis Bug Tracker integration',
-	'version'     => '0.9.1'
+	'version'     => '0.9.2'
 );
 
 // Configuration variables
@@ -284,6 +284,22 @@ function renderMantis( $input, $args, $mwParser )
 
 	if ($result = $db->query($query))
 	{
+		// check if there are any rows in resultset
+		if ($result->num_rows == 0)
+		{
+			if ($conf['bugid'])
+			{
+				$errmsg = sprintf("No MANTIS entry (%07d) found.\n", $conf['bugid']);
+			}
+			else
+			{
+				$errmsg = sprintf("No MANTIS entries with status '%s' found.\n", $conf['status']);
+			}
+			$result->free();
+			$db->close();
+			return $errmsg;
+		}
+
 		// create table start
 		$output = '{| class="wikitable sortable"'."\n";
 
