@@ -39,7 +39,7 @@ $wgExtensionCredits['parserhook'][] = array(
 
 // Configuration variables
 $wgMantisConf['DBserver']       = 'localhost'; // Mantis database server
-$wgMantisConf['DBport']         = '';          // Mantis database port
+$wgMantisConf['DBport']         = NULL;        // Mantis database port
 $wgMantisConf['DBname']         = '';          // Mantis database name
 $wgMantisConf['DBuser']         = '';
 $wgMantisConf['DBpassword']     = '';
@@ -279,7 +279,7 @@ function renderMantis( $input, $args, $mwParser )
 	}
 	
 	// connect to mantis database
-	$db = new mysqli($wgMantisConf['DBserver'], $wgMantisConf['DBuser'], $wgMantisConf['DBpassword'], $wgMantisConf['DBname']);
+	$db = new mysqli($wgMantisConf['DBserver'], $wgMantisConf['DBuser'], $wgMantisConf['DBpassword'], $wgMantisConf['DBname'], $wgMantisConf['DBport']);
 
 	/* check connection */
 	if ($db->connect_errno)
