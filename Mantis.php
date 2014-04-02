@@ -5,6 +5,8 @@
  * Mantis Bug Tracker integration
  *
  * Written by Helmut K. C. Tessarek
+ *
+ * https://www.mediawiki.org/wiki/Extension:Mantis
  * https://github.com/tessus/mwExtensionMantis
  *
  * This program is free software; you can redistribute it and/or modify
@@ -31,8 +33,8 @@ if ( !defined('MEDIAWIKI') )
 $wgExtensionCredits['parserhook'][] = array(
 	'path'        => __FILE__,
 	'name'        => 'Mantis',
-	'author'      => 'Helmut K. C. Tessarek',
-	'url'         => 'https://github.com/tessus/mwExtensionMantis',
+	'author'      => '[https://www.mediawiki.org/wiki/User:Tessus Helmut K. C. Tessarek]',
+	'url'         => 'https://www.mediawiki.org/wiki/Extension:Mantis',
 	'description' => 'Mantis Bug Tracker integration',
 	'version'     => '1.0'
 );
