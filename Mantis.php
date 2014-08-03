@@ -31,12 +31,13 @@ if ( !defined('MEDIAWIKI') )
 }
 
 $wgExtensionCredits['parserhook'][] = array(
-	'path'        => __FILE__,
-	'name'        => 'Mantis',
-	'author'      => '[https://www.mediawiki.org/wiki/User:Tessus Helmut K. C. Tessarek]',
-	'url'         => 'https://www.mediawiki.org/wiki/Extension:Mantis',
-	'description' => 'Mantis Bug Tracker integration',
-	'version'     => '1.0'
+	'path'         => __FILE__,
+	'name'         => 'Mantis',
+	'author'       => '[https://www.mediawiki.org/wiki/User:Tessus Helmut K. C. Tessarek]',
+	'url'          => 'https://www.mediawiki.org/wiki/Extension:Mantis',
+	'description'  => 'Mantis Bug Tracker integration',
+	'license-name' => 'GPL-2.0+',
+	'version'      => '1.1'
 );
 
 // Configuration variables
@@ -64,7 +65,7 @@ function createArray( $string )
 		list($key, $value) = explode(':', $entry);
 		$array[$key] = $value;
 	}
-	
+
 	return $array;
 }
 
@@ -99,7 +100,7 @@ function getKeyOrValue( $keyValue, $array )
 
 $wgHooks['ParserFirstCallInit'][] = 'wfMantis';
 
-function wfMantis( &$parser ) 
+function wfMantis( &$parser )
 {
 	$parser->setHook('mantis', 'renderMantis');
 	return true;
@@ -146,22 +147,34 @@ function renderMantis( $input, $args, $mwParser )
 	foreach ($parameters as $parameter)
 	{
 		$paramField = explode('=', $parameter, 2);
-		if (count($paramField) < 2) 
+		if (count($paramField) < 2)
 		{
 			continue;
 		}
 		$type = strtolower(trim($paramField[0]));
 		$arg = strtolower(trim($paramField[1]));
-		switch ($type) 
+		switch ($type)
 		{
 			case 'bugid':
-				if (is_numeric($arg))
+				$bugid = array();
+				$bugids = explode(',', $arg);
+				foreach ($bugids as $bug)
 				{
-					$conf['bugid']  = intval($arg);
-					$conf['color']  = false;
-					$conf['header'] = false;
+					if (is_numeric($bug))
+					{
+						$bugid[] = intval($bug);
+					}
 				}
-				break;			
+				if (!empty($bugid))
+				{
+					$conf['bugid'] = $bugid;
+					if (count($bugid) == 1)
+					{
+						$conf['color']  = false;
+						$conf['header'] = false;
+					}
+				}
+				break;
 			case 'status':
 				if (((in_array($arg, $mantis['status'])) !== FALSE ) || $arg == 'open')
 				{
@@ -185,8 +198,8 @@ function renderMantis( $input, $args, $mwParser )
 				if ($arg == 'asc' || $arg == 'ascending')
 				{
 					$conf['order'] = 'asc';
-				} 
-				else 
+				}
+				else
 				{
 					$conf['order'] = 'desc';
 				}
@@ -206,7 +219,7 @@ function renderMantis( $input, $args, $mwParser )
 				if ($arg == 'true' || $arg == 'yes' || $arg == 'on')
 				{
 					$conf[$type] = true;
-				} 
+				}
 				elseif ($arg == 'false' || $arg == 'no' || $arg == 'off')
 				{
 					$conf[$type] = false;
@@ -226,7 +239,7 @@ function renderMantis( $input, $args, $mwParser )
 						$showNew[] = $column;
 					}
 				}
-				if (!empty($conf['show']))
+				if (!empty($showNew))
 				{
 					$conf['show'] = $showNew;
 				}
@@ -277,9 +290,25 @@ function renderMantis( $input, $args, $mwParser )
 	}
 	else
 	{
-		$query .= "where b.id = $conf[bugid]";
+		// I'm a performance guy, so I differentiate between a single row access and an IN list
+		// who knows how stupid the database engine is
+		if (count($conf[bugid]) == 1)
+		{
+			$id = $conf[bugid][0];
+			$query .= "where b.id = $id";
+		}
+		else
+		{
+			$inlist = implode(',', $conf[bugid]);
+			$query .= "where b.id in ( $inlist ) ";
+			$query .= "order by $conf[orderby] $conf[order] ";
+			if (($conf['count'] != NULL) && $conf['count'] > 0)
+			{
+				$query .= "limit $conf[count]";
+			}
+		}
 	}
-	
+
 	// connect to mantis database
 	$db = new mysqli($wgMantisConf['DBserver'], $wgMantisConf['DBuser'], $wgMantisConf['DBpassword'], $wgMantisConf['DBname'], $wgMantisConf['DBport']);
 
@@ -301,7 +330,14 @@ function renderMantis( $input, $args, $mwParser )
 		{
 			if ($conf['bugid'])
 			{
-				$errmsg = sprintf("No MANTIS entry (%07d) found.\n", $conf['bugid']);
+				if (count($conf['bugid']) == 1)
+				{
+					$errmsg = sprintf("No MANTIS entry (%07d) found.\n", $conf['bugid'][0]);
+				}
+				else
+				{
+					$errmsg = sprintf("No MANTIS entries found.\n");
+				}
 			}
 			else
 			{
@@ -372,7 +408,7 @@ function renderMantis( $input, $args, $mwParser )
 							$assigned = "(${username})";
 						}
 						$output .= sprintf("%s %s\n", getKeyOrValue($row[$colname], $mantis[$colname]), $assigned);
-						break;	
+						break;
 					case 'summary':
 						$output .= sprintf($format, $color, 'left');
 						$summary = $row[$colname];
