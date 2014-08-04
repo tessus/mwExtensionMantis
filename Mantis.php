@@ -37,7 +37,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'url'          => 'https://www.mediawiki.org/wiki/Extension:Mantis',
 	'description'  => 'Mantis Bug Tracker integration',
 	'license-name' => 'GPL-2.0+',
-	'version'      => '1.1'
+	'version'      => '1.2'
 );
 
 // Configuration variables
@@ -131,6 +131,7 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['suppressinfo']   = false;
 	$conf['summarylength']  = NULL;
 	$conf['show']           = array('id','category','severity','status','updated','summary');
+	$conf['comment']        = NULL;
 
 	$tableOptions   = array('sortable', 'standard', 'noborder');
 	$orderbyOptions = createArray($columnNames);
@@ -246,6 +247,14 @@ function renderMantis( $input, $args, $mwParser )
 			default:
 				break;
 		} // end main switch()
+		if (substr($type, 0, 7) == "comment")
+		{
+			if (is_numeric(substr($type, 8)))
+			{
+				$id = intval(substr($type, 8));
+				$conf['comment'][$id] = $arg;
+			}
+		}
 	} // end foreach()
 
 	// build the link url
@@ -362,6 +371,10 @@ function renderMantis( $input, $args, $mwParser )
 			{
 				$output .= "!".ucfirst($colname)."\n";
 			}
+			if (!empty($conf['comment']))
+			{
+				$output .= "!Comment\n";
+			}
 		}
 
 		$format = "|style=\"padding-left:10px; padding-right:10px; color: black; background-color: #%s; text-align:%s\" |";
@@ -429,8 +442,20 @@ function renderMantis( $input, $args, $mwParser )
 						break;
 				}
 			}
-		}
+			if (!empty($conf['comment']))
+			{
+				$output .= sprintf($format, $color, 'left');
 
+				if (array_key_exists($row[id], $conf['comment']))
+				{
+					$output .= $conf['comment'][$row[id]]."\n";
+				}
+				else
+				{
+					$output .= "\n";
+				}
+			}
+		}
 		// create table end
 		$output .= "|}\n";
 
