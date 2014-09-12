@@ -37,7 +37,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'url'          => 'https://www.mediawiki.org/wiki/Extension:Mantis',
 	'description'  => 'Mantis Bug Tracker integration',
 	'license-name' => 'GPL-2.0+',
-	'version'      => '1.3'
+	'version'      => '1.4'
 );
 
 // Configuration variables
@@ -178,9 +178,16 @@ function renderMantis( $input, $args, $mwParser )
 				}
 				break;
 			case 'status':
-				if (((in_array($arg, $mantis['status'])) !== FALSE ) || $arg == 'open')
+				if (((in_array($arg, $mantis['status'])) !== FALSE ) || $arg == 'open' || $arg == 'all')
 				{
-					$conf['status'] = $arg;
+					if ($arg != 'all')
+					{
+						$conf['status'] = $arg;
+					}
+					else
+					{
+						$conf['status'] = NULL;
+					}
 				}
 				break;
 			case 'severity':
@@ -285,23 +292,34 @@ function renderMantis( $input, $args, $mwParser )
 
 	if ($conf['bugid'] == NULL)
 	{
-		if ($conf['status'] == 'open')
+		if ($conf['status'])
 		{
-			$status = getKeyOrValue('closed', $mantis['status']);
-			$cond = "<> $status";
-		}
-		else
-		{
-			$status = getKeyOrValue($conf['status'], $mantis['status']);
-			$cond = "= $status";
-		}
+			if ($conf['status'] == 'open')
+			{
+				$status = getKeyOrValue('closed', $mantis['status']);
+				$cond = "<> $status";
+			}
+			else
+			{
+				$status = getKeyOrValue($conf['status'], $mantis['status']);
+				$cond = "= $status";
+			}
 
-		$query .= "where b.status $cond ";
+			$query .= "where b.status $cond ";
+		}
 
 		if ($conf['severity'])
 		{
+			if ($conf['status'])
+			{
+				$PRE = "and";
+			}
+			else
+			{
+				$PRE = "where";
+			}
 			$severity = getKeyOrValue($conf['severity'], $mantis['severity']);
-			$query .= "and b.severity = $severity ";
+			$query .= "$PRE b.severity = $severity ";
 		}
 
 		$query .= "order by $conf[orderby] $conf[order] ";
@@ -353,10 +371,12 @@ function renderMantis( $input, $args, $mwParser )
 		{
 			if ($conf['bugid'])
 			{
+				// only one bugid specified
 				if (count($conf['bugid']) == 1)
 				{
 					$errmsg = sprintf("No MANTIS entry (%07d) found.\n", $conf['bugid'][0]);
 				}
+				// a list of bugs specified
 				else
 				{
 					$errmsg = sprintf("No MANTIS entries found.\n");
@@ -364,10 +384,24 @@ function renderMantis( $input, $args, $mwParser )
 			}
 			else
 			{
-				$errmsg = sprintf("No MANTIS entries with status '%s' found.\n", $conf['status']);
-				if ($conf['severity'])
+				// status set
+				if ($conf['status'])
 				{
-					$errmsg = sprintf("No MANTIS entries with status '%s' and severity '%s' found.\n", $conf['status'], $conf['severity']);
+					$errmsg = sprintf("No MANTIS entries with status '%s' found.\n", $conf['status']);
+					// status and severity set
+					if ($conf['severity'])
+					{
+						$errmsg = sprintf("No MANTIS entries with status '%s' and severity '%s' found.\n", $conf['status'], $conf['severity']);
+					}
+				}
+				else
+				{
+					$errmsg = sprintf("No MANTIS entries found.\n");
+					// severity set
+					if ($conf['severity'])
+					{
+						$errmsg = sprintf("No MANTIS entries with severity '%s' found.\n", $conf['severity']);
+					}
 				}
 			}
 			$result->free();
