@@ -37,7 +37,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'url'          => 'https://www.mediawiki.org/wiki/Extension:Mantis',
 	'description'  => 'Mantis Bug Tracker integration',
 	'license-name' => 'GPL-2.0+',
-	'version'      => '1.2'
+	'version'      => '1.3'
 );
 
 // Configuration variables
@@ -123,6 +123,7 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['header']         = true;
 	$conf['color']          = true;
 	$conf['status']         = 'open';
+	$conf['severity']       = NULL;
 	$conf['count']          = NULL;
 	$conf['orderby']        = 'b.last_updated';
 	$conf['order']          = 'desc';
@@ -180,6 +181,12 @@ function renderMantis( $input, $args, $mwParser )
 				if (((in_array($arg, $mantis['status'])) !== FALSE ) || $arg == 'open')
 				{
 					$conf['status'] = $arg;
+				}
+				break;
+			case 'severity':
+				if ((in_array($arg, $mantis['severity'])) !== FALSE )
+				{
+					$conf['severity'] = $arg;
 				}
 				break;
 			case 'table':
@@ -290,6 +297,13 @@ function renderMantis( $input, $args, $mwParser )
 		}
 
 		$query .= "where b.status $cond ";
+
+		if ($conf['severity'])
+		{
+			$severity = getKeyOrValue($conf['severity'], $mantis['severity']);
+			$query .= "and b.severity = $severity ";
+		}
+
 		$query .= "order by $conf[orderby] $conf[order] ";
 
 		if (($conf['count'] != NULL) && $conf['count'] > 0)
@@ -351,6 +365,10 @@ function renderMantis( $input, $args, $mwParser )
 			else
 			{
 				$errmsg = sprintf("No MANTIS entries with status '%s' found.\n", $conf['status']);
+				if ($conf['severity'])
+				{
+					$errmsg = sprintf("No MANTIS entries with status '%s' and severity '%s' found.\n", $conf['status'], $conf['severity']);
+				}
 			}
 			$result->free();
 			$db->close();
