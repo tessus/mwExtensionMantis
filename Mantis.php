@@ -116,7 +116,7 @@ function renderMantis( $input, $args, $mwParser )
 		$mwParser->getOutput()->updateCacheExpiry($wgMantisConf['MaxCacheTime']);
 	}
 
-	$columnNames = 'id:b.id,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary';
+	$columnNames = 'id:b.id,project:p.name,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary';
 
 	$conf['bugid']          = NULL;
 	$conf['table']          = 'sortable';
@@ -131,6 +131,7 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['suppresserrors'] = false;
 	$conf['suppressinfo']   = false;
 	$conf['summarylength']  = NULL;
+	$conf['project']        = NULL;
 	$conf['show']           = array('id','category','severity','status','updated','summary');
 	$conf['comment']        = NULL;
 
@@ -153,8 +154,9 @@ function renderMantis( $input, $args, $mwParser )
 		{
 			continue;
 		}
-		$type = strtolower(trim($paramField[0]));
-		$arg = strtolower(trim($paramField[1]));
+		$type  = strtolower(trim($paramField[0]));
+		$csArg = trim($paramField[1]);
+		$arg   = strtolower(trim($paramField[1]));
 		switch ($type)
 		{
 			case 'bugid':
@@ -258,6 +260,10 @@ function renderMantis( $input, $args, $mwParser )
 				{
 					$conf['show'] = $showNew;
 				}
+				break;
+			case 'project':
+				$tmpProjects = $csArg;
+				break;
 			default:
 				break;
 		} // end main switch()
@@ -266,7 +272,7 @@ function renderMantis( $input, $args, $mwParser )
 			if (is_numeric(substr($type, 8)))
 			{
 				$id = intval(substr($type, 8));
-				$conf['comment'][$id] = $arg;
+				$conf['comment'][$id] = $csArg;
 			}
 		}
 	} // end foreach()
@@ -286,9 +292,53 @@ function renderMantis( $input, $args, $mwParser )
 		}
 	}
 
-	// build the SQL query
 	$tabprefix = $wgMantisConf['DBprefix'];
-	$query = "select b.id as id, c.name as category, b.severity as severity, b.priority as priority, b.status as status, u.username as username, b.date_submitted as created, b.last_updated as updated, b.summary as summary from ${tabprefix}category_table c inner join ${tabprefix}bug_table b on (b.category_id = c.id) left outer join ${tabprefix}user_table u on (u.id = b.handler_id) ";
+
+	// connect to mantis database
+	$db = new mysqli($wgMantisConf['DBserver'], $wgMantisConf['DBuser'], $wgMantisConf['DBpassword'], $wgMantisConf['DBname'], $wgMantisConf['DBport']);
+
+	/* check connection */
+	if ($db->connect_errno)
+	{
+		$errmsg = sprintf("Connect to [%s] failed: %s\n", $wgMantisConf['DBname'], $db->connect_error);
+		if ($conf['suppresserrors'])
+		{
+			$errmsg = '';
+		}
+		return $errmsg;
+	}
+
+	// create project array - accept only project names that exist in the database to prevent SQL injection
+	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
+	if (!empty($tmpProjects))
+	{
+		$projectNames = array();
+		$projectNew = array();
+		$prjQuery = "select name from ${tabprefix}project_table";
+		if ($result = $db->query($prjQuery))
+		{
+			while ($row = $result->fetch_assoc())
+			{
+				$projectNames[] = $row['name'];
+			}
+		}
+		$projects = explode(',', $tmpProjects);
+		foreach ($projects as $project)
+		{
+			$project = trim($project);
+			if (in_array($project, $projectNames))
+			{
+				$projectNew[] = $project;
+			}
+		}
+		if (!empty($projectNew))
+		{
+			$conf['project'] = $projectNew;
+		}
+	}
+
+	// build the SQL query
+	$query = "select b.id as id, p.name as project, c.name as category, b.severity as severity, b.priority as priority, b.status as status, u.username as username, b.date_submitted as created, b.last_updated as updated, b.summary as summary from ${tabprefix}category_table c inner join ${tabprefix}bug_table b on (b.category_id = c.id) inner join ${tabprefix}project_table p on (b.project_id = p.id) left outer join ${tabprefix}user_table u on (u.id = b.handler_id) ";
 
 	if ($conf['bugid'] == NULL)
 	{
@@ -322,6 +372,20 @@ function renderMantis( $input, $args, $mwParser )
 			$query .= "$PRE b.severity = $severity ";
 		}
 
+		if ($conf['project'])
+		{
+			if ($conf['status'] || $conf['severity'])
+			{
+				$PRE = "and";
+			}
+			else
+			{
+				$PRE = "where";
+			}
+			$inlist = "'".implode("','", $conf['project'])."'";
+			$query .= "$PRE p.name in ( $inlist ) ";
+		}
+
 		$query .= "order by $conf[orderby] $conf[order] ";
 
 		if (($conf['count'] != NULL) && $conf['count'] > 0)
@@ -348,20 +412,6 @@ function renderMantis( $input, $args, $mwParser )
 				$query .= "limit $conf[count]";
 			}
 		}
-	}
-
-	// connect to mantis database
-	$db = new mysqli($wgMantisConf['DBserver'], $wgMantisConf['DBuser'], $wgMantisConf['DBpassword'], $wgMantisConf['DBname'], $wgMantisConf['DBport']);
-
-	/* check connection */
-	if ($db->connect_errno)
-	{
-		$errmsg = sprintf("Connect to [%s] failed: %s\n", $wgMantisConf['DBname'], $db->connect_error);
-		if ($conf['suppresserrors'])
-		{
-			$errmsg = '';
-		}
-		return $errmsg;
 	}
 
 	if ($result = $db->query($query))
