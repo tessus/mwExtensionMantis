@@ -132,6 +132,7 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['suppressinfo']   = false;
 	$conf['summarylength']  = NULL;
 	$conf['project']        = NULL;
+	$conf['category']       = NULL;
 	$conf['show']           = array('id','category','severity','status','updated','summary');
 	$conf['comment']        = NULL;
 
@@ -264,6 +265,9 @@ function renderMantis( $input, $args, $mwParser )
 			case 'project':
 				$tmpProjects = $csArg;
 				break;
+			case 'category':
+				$tmpCategories = $csArg;
+				break;
 			default:
 				break;
 		} // end main switch()
@@ -337,22 +341,58 @@ function renderMantis( $input, $args, $mwParser )
 		}
 	}
 
+	// create category array - accept only category names that exist in the database to prevent SQL injection
+	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
+	if (!empty($tmpCategories))
+	{
+		$categoryNames = array();
+		$categoryNew = array();
+		$catQuery = "select name from ${tabprefix}category_table";
+		if ($result = $db->query($catQuery))
+		{
+			while ($row = $result->fetch_assoc())
+			{
+				$categoryNames[] = $row['name'];
+			}
+		}
+		$categories = explode(',', $tmpCategories);
+		foreach ($categories as $category)
+		{
+			$category = trim($category);
+			if (in_array($category, $categoryNames))
+			{
+				$categoryNew[] = $category;
+			}
+		}
+		if (!empty($categoryNew))
+		{
+			$conf['category'] = $categoryNew;
+		}
+	}
+
 	// build the SQL query
 	$query = "select b.id as id, p.name as project, c.name as category, b.severity as severity, b.priority as priority, b.status as status, u.username as username, b.date_submitted as created, b.last_updated as updated, b.summary as summary from ${tabprefix}category_table c inner join ${tabprefix}bug_table b on (b.category_id = c.id) inner join ${tabprefix}project_table p on (b.project_id = p.id) left outer join ${tabprefix}user_table u on (u.id = b.handler_id) ";
 
 	if ($conf['bugid'] == NULL)
 	{
-		if ($conf['status'] == 'open')
+		if ($conf['status'])
 		{
-			$status = getKeyOrValue('closed', $mantis['status']);
-			$cond = "<> $status";
+			if ($conf['status'] == 'open')
+			{
+				$status = getKeyOrValue('closed', $mantis['status']);
+				$cond = "<> $status";
+			}
+			else
+			{
+				$status = getKeyOrValue($conf['status'], $mantis['status']);
+				$cond = "= $status";
+			}
+			$query .= "where b.status $cond ";
 		}
 		else
 		{
-			$status = getKeyOrValue($conf['status'], $mantis['status']);
-			$cond = "= $status";
+			$query .= "where 1=1 ";
 		}
-		$query .= "where b.status $cond ";
 
 		if ($conf['severity'])
 		{
@@ -364,6 +404,12 @@ function renderMantis( $input, $args, $mwParser )
 		{
 			$inlist = "'".implode("','", $conf['project'])."'";
 			$query .= "and p.name in ( $inlist ) ";
+		}
+
+		if ($conf['category'])
+		{
+			$inlist = "'".implode("','", $conf['category'])."'";
+			$query .= "and c.name in ( $inlist ) ";
 		}
 
 		$query .= "order by $conf[orderby] $conf[order] ";
