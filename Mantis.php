@@ -9,7 +9,7 @@
  * https://www.mediawiki.org/wiki/Extension:Mantis
  * https://github.com/tessus/mwExtensionMantis
  *
- * This program is free software; you can redistribute it and/or modify
+ * This program is free software; you can redistribute it  and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
@@ -460,24 +460,50 @@ function renderMantis( $input, $args, $mwParser )
 			}
 			else
 			{
-				// status set
+				$useAnd = false;
+				$errmsg = "No MANTIS entries with ";
+
 				if ($conf['status'])
 				{
-					$errmsg = sprintf("No MANTIS entries with status '%s' found.\n", $conf['status']);
-					// status and severity set
-					if ($conf['severity'])
-					{
-						$errmsg = sprintf("No MANTIS entries with status '%s' and severity '%s' found.\n", $conf['status'], $conf['severity']);
-					}
+					$errmsg .= sprintf("status '%s'", $conf['status']);
+					$useAnd = true;
 				}
-				else
+
+				if ($conf['severity'])
+				{
+					if ($useAnd)
+					{
+						$errmsg .= " and ";
+					}
+					$errmsg .= sprintf("severity '%s'", $conf['severity']);
+					$useAnd = true;
+				}
+
+				if ($conf['category'])
+				{
+					if ($useAnd)
+					{
+						$errmsg .= " and ";
+					}
+					$errmsg .= sprintf("category '%s'", implode("'", $conf['category']));
+					$useAnd = true;
+				}
+
+				if ($conf['project'])
+				{
+					if ($useAnd)
+					{
+						$errmsg .= " and ";
+					}
+					$errmsg .= sprintf("project '%s'", implode("'", $conf['project']));
+					$useAnd = true;
+				}
+
+				$errmsg .= " found.\n";
+
+				if (!$useAnd)
 				{
 					$errmsg = sprintf("No MANTIS entries found.\n");
-					// severity set
-					if ($conf['severity'])
-					{
-						$errmsg = sprintf("No MANTIS entries with severity '%s' found.\n", $conf['severity']);
-					}
 				}
 			}
 			$result->free();
