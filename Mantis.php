@@ -342,48 +342,28 @@ function renderMantis( $input, $args, $mwParser )
 
 	if ($conf['bugid'] == NULL)
 	{
-		if ($conf['status'])
+		if ($conf['status'] == 'open')
 		{
-			if ($conf['status'] == 'open')
-			{
-				$status = getKeyOrValue('closed', $mantis['status']);
-				$cond = "<> $status";
-			}
-			else
-			{
-				$status = getKeyOrValue($conf['status'], $mantis['status']);
-				$cond = "= $status";
-			}
-
-			$query .= "where b.status $cond ";
+			$status = getKeyOrValue('closed', $mantis['status']);
+			$cond = "<> $status";
 		}
+		else
+		{
+			$status = getKeyOrValue($conf['status'], $mantis['status']);
+			$cond = "= $status";
+		}
+		$query .= "where b.status $cond ";
 
 		if ($conf['severity'])
 		{
-			if ($conf['status'])
-			{
-				$PRE = "and";
-			}
-			else
-			{
-				$PRE = "where";
-			}
 			$severity = getKeyOrValue($conf['severity'], $mantis['severity']);
-			$query .= "$PRE b.severity = $severity ";
+			$query .= "and b.severity = $severity ";
 		}
 
 		if ($conf['project'])
 		{
-			if ($conf['status'] || $conf['severity'])
-			{
-				$PRE = "and";
-			}
-			else
-			{
-				$PRE = "where";
-			}
 			$inlist = "'".implode("','", $conf['project'])."'";
-			$query .= "$PRE p.name in ( $inlist ) ";
+			$query .= "and p.name in ( $inlist ) ";
 		}
 
 		$query .= "order by $conf[orderby] $conf[order] ";
