@@ -614,6 +614,8 @@ function renderMantis( $input, $args, $mwParser )
 		$output .= "|}\n";
 
 		$result->free();
+	}else {
+		return "ERROR! Check database settings and table prefix! (Missing '_' ?)";
 	}
 
 	$db->close();
