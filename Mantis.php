@@ -619,6 +619,6 @@ function renderMantis( $input, $args, $mwParser )
 	$db->close();
 
 	//wfMessage("Test Message")->plain();
-	return $mwParser->recursiveTagParse($output);
+	return $mwParser->recursiveTagParse(utf8_encode($output));
 }
 ?>
