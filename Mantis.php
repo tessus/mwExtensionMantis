@@ -209,7 +209,7 @@ function renderMantis( $input, $args, $mwParser )
 			case 'summarylength':
 				if (is_numeric($arg) && ($arg > 0))
 				{
-					$conf[$type] = intval($arg);
+					$conf["$type"] = intval($arg);
 				}
 				break;
 			case 'order':
@@ -236,11 +236,11 @@ function renderMantis( $input, $args, $mwParser )
 			case 'header':
 				if ($arg == 'true' || $arg == 'yes' || $arg == 'on')
 				{
-					$conf[$type] = true;
+					$conf["$type"] = true;
 				}
 				elseif ($arg == 'false' || $arg == 'no' || $arg == 'off')
 				{
-					$conf[$type] = false;
+					$conf["$type"] = false;
 				}
 				break;
 			case 'dateformat':
@@ -412,11 +412,11 @@ function renderMantis( $input, $args, $mwParser )
 			$query .= "and c.name in ( $inlist ) ";
 		}
 
-		$query .= "order by $conf[orderby] $conf[order] ";
+		$query .= "order by ${conf['orderby']} ${conf['order']} ";
 
 		if (($conf['count'] != NULL) && $conf['count'] > 0)
 		{
-			$query .= "limit $conf[count]";
+			$query .= "limit ${conf['count']}";
 		}
 	}
 	else
@@ -432,10 +432,10 @@ function renderMantis( $input, $args, $mwParser )
 		{
 			$inlist = implode(',', $conf['bugid']);
 			$query .= "where b.id in ( $inlist ) ";
-			$query .= "order by $conf[orderby] $conf[order] ";
+			$query .= "order by ${conf['orderby']} ${conf['order']} ";
 			if (($conf['count'] != NULL) && $conf['count'] > 0)
 			{
-				$query .= "limit $conf[count]";
+				$query .= "limit ${conf['count']}";
 			}
 		}
 	}
