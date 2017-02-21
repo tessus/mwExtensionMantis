@@ -615,10 +615,13 @@ function renderMantis( $input, $args, $mwParser )
 
 		$result->free();
 	}
+	else {
+		return "ERROR! Check database settings and table prefix! (Missing '_' ?)";
+	}
 
 	$db->close();
 
 	//wfMessage("Test Message")->plain();
-	return $mwParser->recursiveTagParse($output);
+	return $mwParser->recursiveTagParse(utf8_encode($output));
 }
 ?>
