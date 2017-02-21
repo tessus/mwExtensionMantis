@@ -37,7 +37,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'url'          => 'https://www.mediawiki.org/wiki/Extension:Mantis',
 	'description'  => 'Mantis Bug Tracker integration',
 	'license-name' => 'GPL-2.0+',
-	'version'      => '1.4'
+	'version'      => '1.5'
 );
 
 // Configuration variables
