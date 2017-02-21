@@ -423,14 +423,14 @@ function renderMantis( $input, $args, $mwParser )
 	{
 		// I'm a performance guy, so I differentiate between a single row access and an IN list
 		// who knows how stupid the database engine is
-		if (count($conf[bugid]) == 1)
+		if (count($conf['bugid']) == 1)
 		{
-			$id = $conf[bugid][0];
+			$id = $conf['bugid'][0];
 			$query .= "where b.id = $id";
 		}
 		else
 		{
-			$inlist = implode(',', $conf[bugid]);
+			$inlist = implode(',', $conf['bugid']);
 			$query .= "where b.id in ( $inlist ) ";
 			$query .= "order by $conf[orderby] $conf[order] ";
 			if (($conf['count'] != NULL) && $conf['count'] > 0)
@@ -614,9 +614,6 @@ function renderMantis( $input, $args, $mwParser )
 		$output .= "|}\n";
 
 		$result->free();
-	}
-	else {
-		return "ERROR! Check database settings and table prefix! (Missing '_' ?)";
 	}
 
 	$db->close();
