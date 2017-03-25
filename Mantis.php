@@ -312,6 +312,8 @@ function renderMantis( $input, $args, $mwParser )
 		return $errmsg;
 	}
 
+	$db->set_charset("utf8");
+
 	// create project array - accept only project names that exist in the database to prevent SQL injection
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpProjects))
@@ -630,6 +632,6 @@ function renderMantis( $input, $args, $mwParser )
 	$db->close();
 
 	//wfMessage("Test Message")->plain();
-	return $mwParser->recursiveTagParse(utf8_encode($output));
+	return $mwParser->recursiveTagParse($output);
 }
 ?>
