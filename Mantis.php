@@ -116,7 +116,7 @@ function renderMantis( $input, $args, $mwParser )
 		$mwParser->getOutput()->updateCacheExpiry($wgMantisConf['MaxCacheTime']);
 	}
 
-	$columnNames = 'id:b.id,project:p.name,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary';
+	$columnNames = 'id:b.id,project:p.name,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary,fixed_in_version:b.fixed_in_version';
 
 	$conf['bugid']          = NULL;
 	$conf['table']          = 'sortable';
@@ -135,6 +135,8 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['category']       = NULL;
 	$conf['show']           = array('id','category','severity','status','updated','summary');
 	$conf['comment']        = NULL;
+	$conf['fixed_in_version'] = NULL;
+	$conf['username'] = NULL;
 
 	$tableOptions   = array('sortable', 'standard', 'noborder');
 	$orderbyOptions = createArray($columnNames);
@@ -225,9 +227,19 @@ function renderMantis( $input, $args, $mwParser )
 			case 'orderby':
 			case 'sortkey':
 			case 'ordermethod':
-				if (array_key_exists($arg, $orderbyOptions))
+				$orderbyNew = array();
+				$columns = explode(',', $arg);
+				foreach ($columns as $column)
 				{
-					$conf['orderby'] = $orderbyOptions[$arg];
+					$column=trim($column);
+					if (array_key_exists($column, $orderbyOptions))
+					{
+						$orderbyNew[] = $orderbyOptions[$column];
+					}
+				}
+				if (!empty($orderbyNew))
+				{
+					$conf['orderby'] = implode(",", $orderbyNew);
 				}
 				break;
 			case 'suppresserrors':
@@ -267,6 +279,12 @@ function renderMantis( $input, $args, $mwParser )
 				break;
 			case 'category':
 				$tmpCategories = $csArg;
+				break;
+			case 'fixed_in_version':
+				$tmpFixedInVersions = $csArg;
+				break;
+			case 'username':
+				$tmpUsername = $csArg;
 				break;
 			default:
 				break;
@@ -372,8 +390,83 @@ function renderMantis( $input, $args, $mwParser )
 		}
 	}
 
+	// create fixed in version array - accept only version that exist in the database to prevent SQL injection
+	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
+	if (!empty($tmpFixedInVersions))
+	{
+		$prjverVersions = array();
+		$prjverNew = array();
+		$verQuery = "select version from ${tabprefix}project_version_table";
+		if ($result = $db->query($verQuery))
+		{
+			while ($row = $result->fetch_assoc())
+			{
+				$prjverVersions[] = $row['version'];
+			}
+			$result->close();
+		}
+		$versions = explode(',', $tmpFixedInVersions);
+		foreach ($versions as $version)
+		{
+			$version = trim($version);
+			if (in_array($version, $prjverVersions))
+			{
+				$prjverNew[] = $version;
+			}
+		}
+		if (!empty($prjverNew))
+		{
+			$conf['fixed_in_version'] = $prjverNew;
+		}
+	}
+
+	// create username array - accept only username that exist in the database to prevent SQL injection
+	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
+	if (!empty($tmpUsername))
+	{
+		$userUsernames = array();
+		$userNew = array();
+		$userQuery = "select username from ${tabprefix}user_table";
+		if ($result = $db->query($userQuery))
+		{
+			while ($row = $result->fetch_assoc())
+			{
+				$userUsernames[] = $row['username'];
+			}
+			$result->close();
+		}
+		$usernames= explode(',', $tmpUsername);
+		foreach ($usernames as $username)
+		{
+			$username = trim($username);
+			if (in_array($username, $userUsernames))
+			{
+				$userNew[] = $username;
+			}
+		}
+		if (!empty($userNew))
+		{
+			$conf['username'] = $userNew;
+		}
+	}
 	// build the SQL query
-	$query = "select b.id as id, p.name as project, c.name as category, b.severity as severity, b.priority as priority, b.status as status, u.username as username, b.date_submitted as created, b.last_updated as updated, b.summary as summary from ${tabprefix}category_table c inner join ${tabprefix}bug_table b on (b.category_id = c.id) inner join ${tabprefix}project_table p on (b.project_id = p.id) left outer join ${tabprefix}user_table u on (u.id = b.handler_id) ";
+	$query = "select 
+		b.id as id, 
+		p.name as project, 
+		c.name as category, 
+		b.severity as severity, 
+		b.priority as priority, 
+		b.status as status, 
+		u.username as username, 
+		b.date_submitted as created, 
+		b.last_updated as updated, 
+		b.summary as summary,
+		b.fixed_in_version as fixed_in_version
+		from 
+		${tabprefix}category_table c 
+		inner join ${tabprefix}bug_table b on (b.category_id = c.id) 
+		inner join ${tabprefix}project_table p on (b.project_id = p.id) 
+		left outer join ${tabprefix}user_table u on (u.id = b.handler_id) ";
 
 	if ($conf['bugid'] == NULL)
 	{
@@ -414,6 +507,17 @@ function renderMantis( $input, $args, $mwParser )
 			$query .= "and c.name in ( $inlist ) ";
 		}
 
+		if ($conf['fixed_in_version'])
+		{
+			$inlist = "'".implode("','", $conf['fixed_in_version'])."'";
+			$query .= "and b.fixed_in_version in ( $inlist ) ";
+		}
+
+		if ($conf['username'])
+		{
+			$inlist = "'".implode("','", $conf['username'])."'";
+			$query .= "and u.username in ( $inlist ) ";
+		}
 		$query .= "order by ${conf['orderby']} ${conf['order']} ";
 
 		if (($conf['count'] != NULL) && $conf['count'] > 0)
@@ -441,7 +545,6 @@ function renderMantis( $input, $args, $mwParser )
 			}
 		}
 	}
-
 	if ($result = $db->query($query))
 	{
 		// check if there are any rows in resultset
@@ -578,6 +681,7 @@ function renderMantis( $input, $args, $mwParser )
 						}
 						$output .= sprintf("%s %s\n", getKeyOrValue($row[$colname], $mantis[$colname]), $assigned);
 						break;
+					case 'fixed_in_version':
 					case 'summary':
 						$output .= sprintf($format, $color, 'left');
 						$summary = $row[$colname];
