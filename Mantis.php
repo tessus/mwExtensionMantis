@@ -450,22 +450,22 @@ function renderMantis( $input, $args, $mwParser )
 		}
 	}
 	// build the SQL query
-	$query = "select 
-		b.id as id, 
-		p.name as project, 
-		c.name as category, 
-		b.severity as severity, 
-		b.priority as priority, 
-		b.status as status, 
-		u.username as username, 
-		b.date_submitted as created, 
-		b.last_updated as updated, 
+	$query = "select
+		b.id as id,
+		p.name as project,
+		c.name as category,
+		b.severity as severity,
+		b.priority as priority,
+		b.status as status,
+		u.username as username,
+		b.date_submitted as created,
+		b.last_updated as updated,
 		b.summary as summary,
 		b.fixed_in_version as fixed_in_version
-		from 
-		${tabprefix}category_table c 
-		inner join ${tabprefix}bug_table b on (b.category_id = c.id) 
-		inner join ${tabprefix}project_table p on (b.project_id = p.id) 
+		from
+		${tabprefix}category_table c
+		inner join ${tabprefix}bug_table b on (b.category_id = c.id)
+		inner join ${tabprefix}project_table p on (b.project_id = p.id)
 		left outer join ${tabprefix}user_table u on (u.id = b.handler_id) ";
 
 	if ($conf['bugid'] == NULL)
