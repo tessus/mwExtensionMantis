@@ -116,7 +116,7 @@ function renderMantis( $input, $args, $mwParser )
 		$mwParser->getOutput()->updateCacheExpiry($wgMantisConf['MaxCacheTime']);
 	}
 
-	$columnNames = 'id:b.id,project:p.name,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary';
+	$columnNames = 'id:b.id,project:p.name,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary,releaseversion:b.fixed_in_version,version:b.version';
 
 	$conf['bugid']          = NULL;
 	$conf['table']          = 'sortable';
@@ -135,7 +135,9 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['category']       = NULL;
 	$conf['show']           = array('id','category','severity','status','updated','summary');
 	$conf['comment']        = NULL;
-
+	$conf['version']        = NULL;
+	$conf['releaseversion']  = NULL;
+	
 	$tableOptions   = array('sortable', 'standard', 'noborder');
 	$orderbyOptions = createArray($columnNames);
 
@@ -147,7 +149,7 @@ function renderMantis( $input, $args, $mwParser )
 	$view = "view.php?id=";
 
 	$parameters = explode("\n", $input);
-
+	
 	foreach ($parameters as $parameter)
 	{
 		$paramField = explode('=', $parameter, 2);
@@ -268,6 +270,13 @@ function renderMantis( $input, $args, $mwParser )
 			case 'category':
 				$tmpCategories = $csArg;
 				break;
+			case 'version':
+				$tmpVersions = $arg;
+				break;
+			case 'releaseversion':
+			    $tmpVersions = $arg;
+				$conf['releaseversion'] = true;
+				break;
 			default:
 				break;
 		} // end main switch()
@@ -371,9 +380,41 @@ function renderMantis( $input, $args, $mwParser )
 			$conf['category'] = $categoryNew;
 		}
 	}
+	 // Create version array
+	if (!empty($tmpVersions))
+	{
+		$versionNames = array();
+		$versionNew = array();
+		$verQuery = "select version as ver from ${tabprefix}project_version_table";
+		if ($result = $db->query($verQuery))
+		{
+			while ($row = $result->fetch_assoc())
+			{
+				$versionNames[] = $row['ver'];
+			}
+		}
+		$versions = explode(',', $tmpVersions);
+		foreach ($versions as $version)
+		{
+			$version = trim($version);
+			if (in_array($version, $versionNames))
+			{
+				$versionNew[] = $version;
+			}
+		}
+		if (!empty($versionNew))
+		{
+			$conf['version'] = $versionNew;
+		}
+	}
+		
 
 	// build the SQL query
-	$query = "select b.id as id, p.name as project, c.name as category, b.severity as severity, b.priority as priority, b.status as status, u.username as username, b.date_submitted as created, b.last_updated as updated, b.summary as summary from ${tabprefix}category_table c inner join ${tabprefix}bug_table b on (b.category_id = c.id) inner join ${tabprefix}project_table p on (b.project_id = p.id) left outer join ${tabprefix}user_table u on (u.id = b.handler_id) ";
+	$versionColumnToJoin = ($conf['releaseversion'] == NULL) ? "b.version" : "b.fixed_in_version" ;	
+	
+	$query = "select b.id as id, p.name as project, c.name as category, b.severity as severity, b.priority as priority, b.status as status, u.username as username, b.date_submitted as created, b.last_updated as updated, b.summary as summary,
+	b.fixed_in_version as releaseversion,b.version as version
+	from ${tabprefix}category_table c inner join ${tabprefix}bug_table b on (b.category_id = c.id) inner join ${tabprefix}project_table p on (b.project_id = p.id) inner join ${tabprefix}project_version_table pv on (p.id = pv.project_id and ${versionColumnToJoin} = pv.version) left outer join ${tabprefix}user_table u on (u.id = b.handler_id) ";
 
 	if ($conf['bugid'] == NULL)
 	{
@@ -412,6 +453,12 @@ function renderMantis( $input, $args, $mwParser )
 		{
 			$inlist = "'".implode("','", $conf['category'])."'";
 			$query .= "and c.name in ( $inlist ) ";
+		}
+		
+		if ($conf['version'])
+		{
+			$inlist = "'".implode("','", $conf['version'])."'";
+			$query .= "and pv.version in ( $inlist ) ";
 		}
 
 		$query .= "order by ${conf['orderby']} ${conf['order']} ";
@@ -488,6 +535,16 @@ function renderMantis( $input, $args, $mwParser )
 						$errmsg .= " and ";
 					}
 					$errmsg .= sprintf("category '%s'", implode("'", $conf['category']));
+					$useAnd = true;
+				}
+				
+				if ($conf['version'])
+				{
+					if ($useAnd)
+					{
+						$errmsg .= " and ";
+					}
+					$errmsg .= sprintf("version '%s'", implode("'", $conf['version']));
 					$useAnd = true;
 				}
 
