@@ -227,19 +227,9 @@ function renderMantis( $input, $args, $mwParser )
 			case 'orderby':
 			case 'sortkey':
 			case 'ordermethod':
-				$orderbyNew = array();
-				$columns = explode(',', $arg);
-				foreach ($columns as $column)
+				if (array_key_exists($arg, $orderbyOptions))
 				{
-					$column=trim($column);
-					if (array_key_exists($column, $orderbyOptions))
-					{
-						$orderbyNew[] = $orderbyOptions[$column];
-					}
-				}
-				if (!empty($orderbyNew))
-				{
-					$conf['orderby'] = implode(",", $orderbyNew);
+					$conf['orderby'] = $orderbyOptions[$arg];
 				}
 				break;
 			case 'suppresserrors':
