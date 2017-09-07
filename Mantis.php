@@ -106,6 +106,33 @@ function wfMantis( &$parser )
 	return true;
 }
 
+// check an array against records in a table.
+// only return values from that array which also exist in the database
+function intersectArrays( $dbcontext, $prefix, $table, $column, $checkArray )
+{
+	$databaseRecords = array();
+	$newArray = array();
+	$dbQuery = "select $column from ${prefix}$table";
+	if ($result = ${dbcontext}->query($dbQuery))
+	{
+		while ($row = $result->fetch_assoc())
+		{
+			$databaseRecords[] = $row[$column];
+		}
+		$result->close();
+	}
+	$items = explode(',', $checkArray);
+	foreach ($items as $item)
+	{
+		$item = trim($item);
+		if (in_array($item, $databaseRecords))
+		{
+			$newArray[] = $item;
+		}
+	}
+	return $newArray;
+}
+
 // The callback function for converting the input text to HTML output
 function renderMantis( $input, $args, $mwParser )
 {
@@ -336,25 +363,7 @@ function renderMantis( $input, $args, $mwParser )
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpProjects))
 	{
-		$projectNames = array();
-		$projectNew = array();
-		$prjQuery = "select name from ${tabprefix}project_table";
-		if ($result = $db->query($prjQuery))
-		{
-			while ($row = $result->fetch_assoc())
-			{
-				$projectNames[] = $row['name'];
-			}
-		}
-		$projects = explode(',', $tmpProjects);
-		foreach ($projects as $project)
-		{
-			$project = trim($project);
-			if (in_array($project, $projectNames))
-			{
-				$projectNew[] = $project;
-			}
-		}
+		$projectNew = intersectArrays($db, $tabprefix, 'project_table', 'name', $tmpProjects);
 		if (!empty($projectNew))
 		{
 			$conf['project'] = $projectNew;
@@ -365,55 +374,18 @@ function renderMantis( $input, $args, $mwParser )
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpCategories))
 	{
-		$categoryNames = array();
-		$categoryNew = array();
-		$catQuery = "select name from ${tabprefix}category_table";
-		if ($result = $db->query($catQuery))
-		{
-			while ($row = $result->fetch_assoc())
-			{
-				$categoryNames[] = $row['name'];
-			}
-		}
-		$categories = explode(',', $tmpCategories);
-		foreach ($categories as $category)
-		{
-			$category = trim($category);
-			if (in_array($category, $categoryNames))
-			{
-				$categoryNew[] = $category;
-			}
-		}
+		$categoryNew = intersectArrays($db, $tabprefix, 'category_table', 'name', $tmpCategories);
 		if (!empty($categoryNew))
 		{
 			$conf['category'] = $categoryNew;
 		}
 	}
 
-	// create fixed in version array - accept only versions that exist in the database to prevent SQL injection
+	// create fixed_in_version array - accept only versions that exist in the database to prevent SQL injection
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpFixedInVersions))
 	{
-		$versionNames = array();
-		$versionNew = array();
-		$verQuery = "select version from ${tabprefix}project_version_table";
-		if ($result = $db->query($verQuery))
-		{
-			while ($row = $result->fetch_assoc())
-			{
-				$versionNames[] = $row['version'];
-			}
-			$result->close();
-		}
-		$versions = explode(',', $tmpFixedInVersions);
-		foreach ($versions as $version)
-		{
-			$version = trim($version);
-			if (in_array($version, $versionNames))
-			{
-				$versionNew[] = $version;
-			}
-		}
+		$versionNew = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpFixedInVersions);
 		if (!empty($versionNew))
 		{
 			$conf['fixed_in_version'] = $versionNew;
@@ -424,56 +396,18 @@ function renderMantis( $input, $args, $mwParser )
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpVersions))
 	{
-		$versionNames = array();
-		$versionNew = array();
-		$verQuery = "select version from ${tabprefix}project_version_table";
-		if ($result = $db->query($verQuery))
-		{
-			while ($row = $result->fetch_assoc())
-			{
-				$versionNames[] = $row['version'];
-			}
-			$result->close();
-		}
-		$versions = explode(',', $tmpVersions);
-		foreach ($versions as $version)
-		{
-			$version = trim($version);
-			if (in_array($version, $versionNames))
-			{
-				$versionNew[] = $version;
-			}
-		}
+		$versionNew = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpVersions);
 		if (!empty($versionNew))
 		{
 			$conf['version'] = $versionNew;
 		}
 	}
 
-	// create target version array - accept only versions that exist in the database to prevent SQL injection
+	// create target_version array - accept only versions that exist in the database to prevent SQL injection
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpTargetVersions))
 	{
-		$versionNames = array();
-		$versionNew = array();
-		$verQuery = "select version from ${tabprefix}project_version_table";
-		if ($result = $db->query($verQuery))
-		{
-			while ($row = $result->fetch_assoc())
-			{
-				$versionNames[] = $row['version'];
-			}
-			$result->close();
-		}
-		$versions = explode(',', $tmpTargetVersions);
-		foreach ($versions as $version)
-		{
-			$version = trim($version);
-			if (in_array($version, $versionNames))
-			{
-				$versionNew[] = $version;
-			}
-		}
+		$versionNew = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpTargetVersions);
 		if (!empty($versionNew))
 		{
 			$conf['target_version'] = $versionNew;
@@ -484,26 +418,7 @@ function renderMantis( $input, $args, $mwParser )
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpUsernames))
 	{
-		$userNames = array();
-		$userNew = array();
-		$userQuery = "select username from ${tabprefix}user_table";
-		if ($result = $db->query($userQuery))
-		{
-			while ($row = $result->fetch_assoc())
-			{
-				$userNames[] = $row['username'];
-			}
-			$result->close();
-		}
-		$usernames = explode(',', $tmpUsernames);
-		foreach ($usernames as $username)
-		{
-			$username = trim($username);
-			if (in_array($username, $userNames))
-			{
-				$userNew[] = $username;
-			}
-		}
+		$userNew = intersectArrays($db, $tabprefix, 'user_table', 'username', $tmpUsernames);
 		if (!empty($userNew))
 		{
 			$conf['username'] = $userNew;
