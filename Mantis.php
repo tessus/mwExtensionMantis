@@ -116,27 +116,29 @@ function renderMantis( $input, $args, $mwParser )
 		$mwParser->getOutput()->updateCacheExpiry($wgMantisConf['MaxCacheTime']);
 	}
 
-	$columnNames = 'id:b.id,project:p.name,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary,fixed_in_version:b.fixed_in_version';
+	$columnNames = 'id:b.id,project:p.name,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary,fixed_in_version:b.fixed_in_version,version:b.version,target_version:b.target_version';
 
-	$conf['bugid']          = NULL;
-	$conf['table']          = 'sortable';
-	$conf['header']         = true;
-	$conf['color']          = true;
-	$conf['status']         = 'open';
-	$conf['severity']       = NULL;
-	$conf['count']          = NULL;
-	$conf['orderby']        = 'b.last_updated';
-	$conf['order']          = 'desc';
-	$conf['dateformat']     = 'Y-m-d';
-	$conf['suppresserrors'] = false;
-	$conf['suppressinfo']   = false;
-	$conf['summarylength']  = NULL;
-	$conf['project']        = NULL;
-	$conf['category']       = NULL;
-	$conf['show']           = array('id','category','severity','status','updated','summary');
-	$conf['comment']        = NULL;
+	$conf['bugid']            = NULL;
+	$conf['table']            = 'sortable';
+	$conf['header']           = true;
+	$conf['color']            = true;
+	$conf['status']           = 'open';
+	$conf['severity']         = NULL;
+	$conf['count']            = NULL;
+	$conf['orderby']          = 'b.last_updated';
+	$conf['order']            = 'desc';
+	$conf['dateformat']       = 'Y-m-d';
+	$conf['suppresserrors']   = false;
+	$conf['suppressinfo']     = false;
+	$conf['summarylength']    = NULL;
+	$conf['project']          = NULL;
+	$conf['category']         = NULL;
+	$conf['show']             = array('id','category','severity','status','updated','summary');
+	$conf['comment']          = NULL;
 	$conf['fixed_in_version'] = NULL;
-	$conf['username'] = NULL;
+	$conf['version']          = NULL;
+	$conf['target_version']   = NULL;
+	$conf['username']         = NULL;
 
 	$tableOptions   = array('sortable', 'standard', 'noborder');
 	$orderbyOptions = createArray($columnNames);
@@ -271,10 +273,18 @@ function renderMantis( $input, $args, $mwParser )
 				$tmpCategories = $csArg;
 				break;
 			case 'fixed_in_version':
+			case 'fixed_in':
 				$tmpFixedInVersions = $csArg;
 				break;
+			case 'version':
+				$tmpVersions = $csArg;
+				break;
+			case 'target_version':
+			case 'target':
+				$tmpTargetVersions = $csArg;
+				break;
 			case 'username':
-				$tmpUsername = $csArg;
+				$tmpUsernames = $csArg;
 				break;
 			default:
 				break;
@@ -380,18 +390,18 @@ function renderMantis( $input, $args, $mwParser )
 		}
 	}
 
-	// create fixed in version array - accept only version that exist in the database to prevent SQL injection
+	// create fixed in version array - accept only versions that exist in the database to prevent SQL injection
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpFixedInVersions))
 	{
-		$prjverVersions = array();
-		$prjverNew = array();
+		$versionNames = array();
+		$versionNew = array();
 		$verQuery = "select version from ${tabprefix}project_version_table";
 		if ($result = $db->query($verQuery))
 		{
 			while ($row = $result->fetch_assoc())
 			{
-				$prjverVersions[] = $row['version'];
+				$versionNames[] = $row['version'];
 			}
 			$result->close();
 		}
@@ -399,37 +409,97 @@ function renderMantis( $input, $args, $mwParser )
 		foreach ($versions as $version)
 		{
 			$version = trim($version);
-			if (in_array($version, $prjverVersions))
+			if (in_array($version, $versionNames))
 			{
-				$prjverNew[] = $version;
+				$versionNew[] = $version;
 			}
 		}
-		if (!empty($prjverNew))
+		if (!empty($versionNew))
 		{
-			$conf['fixed_in_version'] = $prjverNew;
+			$conf['fixed_in_version'] = $versionNew;
 		}
 	}
 
-	// create username array - accept only username that exist in the database to prevent SQL injection
+	// create version array - accept only versions that exist in the database to prevent SQL injection
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
-	if (!empty($tmpUsername))
+	if (!empty($tmpVersions))
 	{
-		$userUsernames = array();
+		$versionNames = array();
+		$versionNew = array();
+		$verQuery = "select version from ${tabprefix}project_version_table";
+		if ($result = $db->query($verQuery))
+		{
+			while ($row = $result->fetch_assoc())
+			{
+				$versionNames[] = $row['version'];
+			}
+			$result->close();
+		}
+		$versions = explode(',', $tmpVersions);
+		foreach ($versions as $version)
+		{
+			$version = trim($version);
+			if (in_array($version, $versionNames))
+			{
+				$versionNew[] = $version;
+			}
+		}
+		if (!empty($versionNew))
+		{
+			$conf['version'] = $versionNew;
+		}
+	}
+
+	// create target version array - accept only versions that exist in the database to prevent SQL injection
+	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
+	if (!empty($tmpTargetVersions))
+	{
+		$versionNames = array();
+		$versionNew = array();
+		$verQuery = "select version from ${tabprefix}project_version_table";
+		if ($result = $db->query($verQuery))
+		{
+			while ($row = $result->fetch_assoc())
+			{
+				$versionNames[] = $row['version'];
+			}
+			$result->close();
+		}
+		$versions = explode(',', $tmpTargetVersions);
+		foreach ($versions as $version)
+		{
+			$version = trim($version);
+			if (in_array($version, $versionNames))
+			{
+				$versionNew[] = $version;
+			}
+		}
+		if (!empty($versionNew))
+		{
+			$conf['target_version'] = $versionNew;
+		}
+	}
+
+	// create username array - accept only usernames that exist in the database to prevent SQL injection
+	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
+	if (!empty($tmpUsernames))
+	{
+		$userNames = array();
 		$userNew = array();
 		$userQuery = "select username from ${tabprefix}user_table";
 		if ($result = $db->query($userQuery))
 		{
 			while ($row = $result->fetch_assoc())
 			{
-				$userUsernames[] = $row['username'];
+				$userNames[] = $row['username'];
 			}
 			$result->close();
 		}
-		$usernames= explode(',', $tmpUsername);
+		$usernames = explode(',', $tmpUsernames);
 		foreach ($usernames as $username)
 		{
 			$username = trim($username);
-			if (in_array($username, $userUsernames))
+			if (in_array($username, $userNames))
 			{
 				$userNew[] = $username;
 			}
@@ -439,6 +509,7 @@ function renderMantis( $input, $args, $mwParser )
 			$conf['username'] = $userNew;
 		}
 	}
+
 	// build the SQL query
 	$query = "select
 		b.id as id,
@@ -451,7 +522,9 @@ function renderMantis( $input, $args, $mwParser )
 		b.date_submitted as created,
 		b.last_updated as updated,
 		b.summary as summary,
-		b.fixed_in_version as fixed_in_version
+		b.fixed_in_version as fixed_in_version,
+		b.version as version,
+		b.target_version as target_version
 		from
 		${tabprefix}category_table c
 		inner join ${tabprefix}bug_table b on (b.category_id = c.id)
@@ -503,11 +576,24 @@ function renderMantis( $input, $args, $mwParser )
 			$query .= "and b.fixed_in_version in ( $inlist ) ";
 		}
 
+		if ($conf['version'])
+		{
+			$inlist = "'".implode("','", $conf['version'])."'";
+			$query .= "and b.version in ( $inlist ) ";
+		}
+
+		if ($conf['target_version'])
+		{
+			$inlist = "'".implode("','", $conf['target_version'])."'";
+			$query .= "and b.target_version in ( $inlist ) ";
+		}
+
 		if ($conf['username'])
 		{
 			$inlist = "'".implode("','", $conf['username'])."'";
 			$query .= "and u.username in ( $inlist ) ";
 		}
+
 		$query .= "order by ${conf['orderby']} ${conf['order']} ";
 
 		if (($conf['count'] != NULL) && $conf['count'] > 0)
@@ -594,6 +680,46 @@ function renderMantis( $input, $args, $mwParser )
 					$useAnd = true;
 				}
 
+				if ($conf['fixed_in_version'])
+				{
+					if ($useAnd)
+					{
+						$errmsg .= " and ";
+					}
+					$errmsg .= sprintf("fixed_in_version '%s'", implode("'", $conf['fixed_in_version']));
+					$useAnd = true;
+				}
+
+				if ($conf['version'])
+				{
+					if ($useAnd)
+					{
+						$errmsg .= " and ";
+					}
+					$errmsg .= sprintf("version '%s'", implode("'", $conf['version']));
+					$useAnd = true;
+				}
+
+				if ($conf['target_version'])
+				{
+					if ($useAnd)
+					{
+						$errmsg .= " and ";
+					}
+					$errmsg .= sprintf("target_version '%s'", implode("'", $conf['target_version']));
+					$useAnd = true;
+				}
+
+				if ($conf['username'])
+				{
+					if ($useAnd)
+					{
+						$errmsg .= " and ";
+					}
+					$errmsg .= sprintf("username '%s'", implode("'", $conf['username']));
+					$useAnd = true;
+				}
+
 				$errmsg .= " found.\n";
 
 				if (!$useAnd)
@@ -671,7 +797,6 @@ function renderMantis( $input, $args, $mwParser )
 						}
 						$output .= sprintf("%s %s\n", getKeyOrValue($row[$colname], $mantis[$colname]), $assigned);
 						break;
-					case 'fixed_in_version':
 					case 'summary':
 						$output .= sprintf($format, $color, 'left');
 						$summary = $row[$colname];
