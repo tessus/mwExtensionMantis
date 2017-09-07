@@ -41,18 +41,19 @@ $wgExtensionCredits['parserhook'][] = array(
 );
 
 // Configuration variables
-$wgMantisConf['DBserver']       = 'localhost'; // Mantis database server
-$wgMantisConf['DBport']         = NULL;        // Mantis database port
-$wgMantisConf['DBname']         = '';          // Mantis database name
-$wgMantisConf['DBuser']         = '';
-$wgMantisConf['DBpassword']     = '';
-$wgMantisConf['DBprefix']       = '';          // Table prefix
-$wgMantisConf['Url']            = '';          // Mantis Root Page
-$wgMantisConf['MaxCacheTime']   = 60*60*0;     // How long to cache pages in seconds
-$wgMantisConf['PriorityString'] = '10:none,20:low,30:normal,40:high,50:urgent,60:immediate';                           // $g_priority_enum_string
-$wgMantisConf['StatusString']   = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed'; // $g_status_enum_string
-$wgMantisConf['StatusColors']   = '10:fcbdbd,20:e3b7eb,30:ffcd85,40:fff494,50:c2dfff,80:d2f5b0,90:c9ccc4';             // $g_status_colors
-$wgMantisConf['SeverityString'] = '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block';        // $g_severity_enum_string
+$wgMantisConf['DBserver']         = 'localhost'; // Mantis database server
+$wgMantisConf['DBport']           = NULL;        // Mantis database port
+$wgMantisConf['DBname']           = '';          // Mantis database name
+$wgMantisConf['DBuser']           = '';
+$wgMantisConf['DBpassword']       = '';
+$wgMantisConf['DBprefix']         = '';          // Table prefix
+$wgMantisConf['Url']              = '';          // Mantis Root Page
+$wgMantisConf['MaxCacheTime']     = 60*60*0;     // How long to cache pages in seconds
+$wgMantisConf['PriorityString']   = '10:none,20:low,30:normal,40:high,50:urgent,60:immediate';                           // $g_priority_enum_string
+$wgMantisConf['StatusString']     = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed'; // $g_status_enum_string
+$wgMantisConf['StatusColors']     = '10:fcbdbd,20:e3b7eb,30:ffcd85,40:fff494,50:c2dfff,80:d2f5b0,90:c9ccc4';             // $g_status_colors
+$wgMantisConf['SeverityString']   = '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block';        // $g_severity_enum_string
+$wgMantisConf['ResolutionString'] = '10:open,20:fixed,30:reopened,40:unable to duplicate,50:not fixable,60:duplicate,70:not a bug,80:suspended,90:wont fix'; // $g_resolution_enum_string
 
 // create an array from a properly formatted string
 function createArray( $string )
@@ -143,7 +144,7 @@ function renderMantis( $input, $args, $mwParser )
 		$mwParser->getOutput()->updateCacheExpiry($wgMantisConf['MaxCacheTime']);
 	}
 
-	$columnNames = 'id:b.id,project:p.name,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary,fixed_in_version:b.fixed_in_version,version:b.version,target_version:b.target_version';
+	$columnNames = 'id:b.id,project:p.name,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary,fixed_in_version:b.fixed_in_version,version:b.version,target_version:b.target_version,resolution:b.resolution';
 
 	$conf['bugid']            = NULL;
 	$conf['table']            = 'sortable';
@@ -170,10 +171,11 @@ function renderMantis( $input, $args, $mwParser )
 	$tableOptions   = array('sortable', 'standard', 'noborder');
 	$orderbyOptions = createArray($columnNames);
 
-	$mantis['status']   = createArray($wgMantisConf['StatusString']);
-	$mantis['color']    = createArray($wgMantisConf['StatusColors']);
-	$mantis['priority'] = createArray($wgMantisConf['PriorityString']);
-	$mantis['severity'] = createArray($wgMantisConf['SeverityString']);
+	$mantis['status']     = createArray($wgMantisConf['StatusString']);
+	$mantis['color']      = createArray($wgMantisConf['StatusColors']);
+	$mantis['priority']   = createArray($wgMantisConf['PriorityString']);
+	$mantis['severity']   = createArray($wgMantisConf['SeverityString']);
+	$mantis['resolution'] = createArray($wgMantisConf['ResolutionString']);
 
 	$view = "view.php?id=";
 
@@ -439,7 +441,8 @@ function renderMantis( $input, $args, $mwParser )
 		b.summary as summary,
 		b.fixed_in_version as fixed_in_version,
 		b.version as version,
-		b.target_version as target_version
+		b.target_version as target_version,
+		b.resolution as resolution
 		from
 		${tabprefix}category_table c
 		inner join ${tabprefix}bug_table b on (b.category_id = c.id)
@@ -700,6 +703,7 @@ function renderMantis( $input, $args, $mwParser )
 						break;
 					case 'severity':
 					case 'priority':
+					case 'resolution':
 						$output .= sprintf($format, $color, 'center');
 						$output .= getKeyOrValue($row[$colname], $mantis[$colname])."\n";
 						break;
