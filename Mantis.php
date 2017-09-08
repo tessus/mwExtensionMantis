@@ -227,12 +227,6 @@ function renderMantis( $input, $args, $mwParser )
 					}
 				}
 				break;
-			case 'severity':
-				if ((in_array($arg, $mantis['severity'])) !== FALSE )
-				{
-					$conf['severity'] = $arg;
-				}
-				break;
 			case 'table':
 				if ((in_array($arg, $tableOptions)) !== FALSE )
 				{
@@ -297,19 +291,20 @@ function renderMantis( $input, $args, $mwParser )
 				}
 				break;
 			case 'resolution':
-				$resNew = array();
+			case 'severity':
+				$arrayNew = array();
 				$columns = explode(',', $arg);
 				foreach ($columns as $column)
 				{
 					$column = trim($column);
-					if ((in_array($column, $mantis['resolution'])) !== FALSE)
+					if ((in_array($column, $mantis[$type])) !== FALSE)
 					{
-						$resNew[] = $column;
+						$arrayNew[] = $column;
 					}
 				}
-				if (!empty($resNew))
+				if (!empty($arrayNew))
 				{
-					$conf['resolution'] = $resNew;
+					$conf[$type] = $arrayNew;
 				}
 				break;
 			case 'project':
@@ -489,14 +484,20 @@ function renderMantis( $input, $args, $mwParser )
 
 		if ($conf['severity'])
 		{
-			$severity = getKeyOrValue($conf['severity'], $mantis['severity']);
-			$query .= "and b.severity = $severity ";
+			$severityNumbers = array();
+			// get the numerical values for severity names
+			foreach ($conf['severity'] as $res)
+			{
+				$severityNumbers[] = getKeyOrValue($res, $mantis['severity']);
+			}
+			$inlist = implode(",", $severityNumbers);
+			$query .= "and b.severity in ( $inlist ) ";
 		}
 
 		if ($conf['resolution'])
 		{
 			$resolutionNumbers = array();
-			// get the numerical values for the resolution names
+			// get the numerical values for resolution names
 			foreach ($conf['resolution'] as $res)
 			{
 				$resolutionNumbers[] = getKeyOrValue($res, $mantis['resolution']);
