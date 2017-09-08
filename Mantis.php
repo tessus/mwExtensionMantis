@@ -150,7 +150,7 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['table']            = 'sortable';
 	$conf['header']           = true;
 	$conf['color']            = true;
-	$conf['status']           = 'open';
+	$conf['status']           = array('open');
 	$conf['severity']         = NULL;
 	$conf['count']            = NULL;
 	$conf['orderby']          = 'b.last_updated';
@@ -217,15 +217,25 @@ function renderMantis( $input, $args, $mwParser )
 				}
 				break;
 			case 'status':
-				if (((in_array($arg, $mantis['status'])) !== FALSE ) || $arg == 'open' || $arg == 'all')
+				$arrayNew = array();
+				$items = explode(',', $arg);
+				foreach ($items as $item)
 				{
-					if ($arg != 'all')
+					$item = trim($item);
+					if ((in_array($item, $mantis[$type])) !== FALSE || $item == 'open' || $item == 'all')
 					{
-						$conf['status'] = $arg;
+						$arrayNew[] = $item;
+					}
+				}
+				if (!empty($arrayNew))
+				{
+					if (in_array('all', $arrayNew))
+					{
+						$conf['status'] = NULL;
 					}
 					else
 					{
-						$conf['status'] = NULL;
+						$conf['status'] = $arrayNew;
 					}
 				}
 				break;
@@ -295,13 +305,13 @@ function renderMantis( $input, $args, $mwParser )
 			case 'resolution':
 			case 'severity':
 				$arrayNew = array();
-				$columns = explode(',', $arg);
-				foreach ($columns as $column)
+				$items = explode(',', $arg);
+				foreach ($items as $item)
 				{
-					$column = trim($column);
-					if ((in_array($column, $mantis[$type])) !== FALSE)
+					$item = trim($item);
+					if ((in_array($item, $mantis[$type])) !== FALSE)
 					{
-						$arrayNew[] = $column;
+						$arrayNew[] = $item;
 					}
 				}
 				if (!empty($arrayNew))
@@ -502,20 +512,32 @@ function renderMantis( $input, $args, $mwParser )
 	{
 		if ($conf['status'])
 		{
-			if ($conf['status'] == 'open')
+			// open and closed = all
+			if (in_array('open', $conf['status']) && in_array('closed', $conf['status']))
 			{
-				$status = getKeyOrValue('closed', $mantis['status']);
-				$cond = "<> $status";
+				$query .= "where 1=1 ";
+			}
+			// if 'open' is in the list, nothing else matters
+			elseif (in_array('open', $conf['status']))
+			{
+				$closed = getKeyOrValue('closed', $mantis['status']);
+				$query .= "where b.status <> $closed ";
 			}
 			else
 			{
-				$status = getKeyOrValue($conf['status'], $mantis['status']);
-				$cond = "= $status";
+				$statusNumbers = array();
+				// get the numerical values for status names
+				foreach ($conf['status'] as $status)
+				{
+					$statusNumbers[] = getKeyOrValue($status, $mantis['status']);
+				}
+				$inlist = implode(",", $statusNumbers);
+				$query .= "where b.status in ( $inlist ) ";
 			}
-			$query .= "where b.status $cond ";
 		}
 		else
 		{
+			// status = all
 			$query .= "where 1=1 ";
 		}
 
@@ -523,9 +545,9 @@ function renderMantis( $input, $args, $mwParser )
 		{
 			$severityNumbers = array();
 			// get the numerical values for severity names
-			foreach ($conf['severity'] as $res)
+			foreach ($conf['severity'] as $sev)
 			{
-				$severityNumbers[] = getKeyOrValue($res, $mantis['severity']);
+				$severityNumbers[] = getKeyOrValue($sev, $mantis['severity']);
 			}
 			$inlist = implode(",", $severityNumbers);
 			$query .= "and b.severity in ( $inlist ) ";
@@ -631,7 +653,7 @@ function renderMantis( $input, $args, $mwParser )
 
 				if ($conf['status'])
 				{
-					$errmsg .= sprintf("status '%s'", $conf['status']);
+					$errmsg .= sprintf("status '%s'", implode(",", $conf['status']));
 					$useAnd = true;
 				}
 
@@ -641,7 +663,7 @@ function renderMantis( $input, $args, $mwParser )
 					{
 						$errmsg .= " and ";
 					}
-					$errmsg .= sprintf("severity '%s'", $conf['severity']);
+					$errmsg .= sprintf("severity '%s'", implode(",", $conf['severity']));
 					$useAnd = true;
 				}
 
@@ -651,7 +673,7 @@ function renderMantis( $input, $args, $mwParser )
 					{
 						$errmsg .= " and ";
 					}
-					$errmsg .= sprintf("category '%s'", implode("'", $conf['category']));
+					$errmsg .= sprintf("category '%s'", implode(",", $conf['category']));
 					$useAnd = true;
 				}
 
@@ -661,7 +683,7 @@ function renderMantis( $input, $args, $mwParser )
 					{
 						$errmsg .= " and ";
 					}
-					$errmsg .= sprintf("project '%s'", implode("'", $conf['project']));
+					$errmsg .= sprintf("project '%s'", implode(",", $conf['project']));
 					$useAnd = true;
 				}
 
@@ -671,7 +693,7 @@ function renderMantis( $input, $args, $mwParser )
 					{
 						$errmsg .= " and ";
 					}
-					$errmsg .= sprintf("fixed_in_version '%s'", implode("'", $conf['fixed_in_version']));
+					$errmsg .= sprintf("fixed_in_version '%s'", implode(",", $conf['fixed_in_version']));
 					$useAnd = true;
 				}
 
@@ -681,7 +703,7 @@ function renderMantis( $input, $args, $mwParser )
 					{
 						$errmsg .= " and ";
 					}
-					$errmsg .= sprintf("version '%s'", implode("'", $conf['version']));
+					$errmsg .= sprintf("version '%s'", implode(",", $conf['version']));
 					$useAnd = true;
 				}
 
@@ -691,7 +713,7 @@ function renderMantis( $input, $args, $mwParser )
 					{
 						$errmsg .= " and ";
 					}
-					$errmsg .= sprintf("target_version '%s'", implode("'", $conf['target_version']));
+					$errmsg .= sprintf("target_version '%s'", implode(",", $conf['target_version']));
 					$useAnd = true;
 				}
 
@@ -701,7 +723,17 @@ function renderMantis( $input, $args, $mwParser )
 					{
 						$errmsg .= " and ";
 					}
-					$errmsg .= sprintf("username '%s'", implode("'", $conf['username']));
+					$errmsg .= sprintf("username '%s'", implode(",", $conf['username']));
+					$useAnd = true;
+				}
+
+				if ($conf['resolution'])
+				{
+					if ($useAnd)
+					{
+						$errmsg .= " and ";
+					}
+					$errmsg .= sprintf("resolution '%s'", implode(",", $conf['resolution']));
 					$useAnd = true;
 				}
 
