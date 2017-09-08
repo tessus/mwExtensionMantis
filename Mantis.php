@@ -168,6 +168,7 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['target_version']   = NULL;
 	$conf['username']         = NULL;
 	$conf['resolution']       = NULL;
+	$conf['headername']       = NULL;
 
 	$tableOptions   = array('sortable', 'standard', 'noborder');
 	$orderbyOptions = createArray($columnNames);
@@ -336,6 +337,14 @@ function renderMantis( $input, $args, $mwParser )
 			{
 				$id = intval(substr($type, 8));
 				$conf['comment'][$id] = $csArg;
+			}
+		}
+		if (substr($type, 0, 10) == "headername")
+		{
+			$column = substr($type, 11);
+			if (array_key_exists($column, $orderbyOptions))
+			{
+				$conf['headername'][$column] = filter_var($csArg, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_BACKTICK | FILTER_FLAG_ENCODE_HIGH | FILTER_FLAG_ENCODE_AMP);
 			}
 		}
 	} // end foreach()
@@ -692,7 +701,8 @@ function renderMantis( $input, $args, $mwParser )
 		{
 			foreach ($conf['show'] as $colname)
 			{
-				$output .= "!".ucfirst($colname)."\n";
+				$header = ($conf['headername'][$colname] ? $conf['headername'][$colname] : ucfirst($colname));
+				$output .= "!".ucfirst($header)."\n";
 			}
 			if (!empty($conf['comment']))
 			{
