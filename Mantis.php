@@ -169,6 +169,7 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['username']         = NULL;
 	$conf['resolution']       = NULL;
 	$conf['headername']       = NULL;
+	$conf['align']            = NULL;
 
 	$tableOptions   = array('sortable', 'standard', 'noborder');
 	$orderbyOptions = createArray($columnNames);
@@ -331,6 +332,7 @@ function renderMantis( $input, $args, $mwParser )
 			default:
 				break;
 		} // end main switch()
+		// process option: comment
 		if (substr($type, 0, 7) == "comment")
 		{
 			if (is_numeric(substr($type, 8)))
@@ -339,12 +341,38 @@ function renderMantis( $input, $args, $mwParser )
 				$conf['comment'][$id] = $csArg;
 			}
 		}
+		// process option: headername
 		if (substr($type, 0, 10) == "headername")
 		{
 			$column = substr($type, 11);
 			if (array_key_exists($column, $orderbyOptions))
 			{
 				$conf['headername'][$column] = filter_var($csArg, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_BACKTICK | FILTER_FLAG_ENCODE_HIGH | FILTER_FLAG_ENCODE_AMP);
+			}
+		}
+		// process option: align
+		if (substr($type, 0, 5) == "align")
+		{
+			$column = substr($type, 6);
+			if (array_key_exists($column, $orderbyOptions))
+			{
+				switch ($arg)
+				{
+					case 'l':
+					case 'left':
+						$conf['align'][$column] = 'left';
+						break;
+					case 'c':
+					case 'center':
+						$conf['align'][$column] = 'center';
+						break;
+					case 'r':
+					case 'right':
+						$conf['align'][$column] = 'right';
+						break;
+					default:
+						break;
+				}
 			}
 		}
 	} // end foreach()
@@ -731,7 +759,8 @@ function renderMantis( $input, $args, $mwParser )
 				switch ($colname)
 				{
 					case 'id':
-						$output .= sprintf($format, $color, 'center');
+						$align = ($conf['align'][$colname] ? $conf['align'][$colname] : 'center' );
+						$output .= sprintf($format, $color, $align);
 						if ($link)
 						{
 							$output .= sprintf("[%s%d %07d]\n", $link, $row[$colname], $row[$colname]);
@@ -744,11 +773,13 @@ function renderMantis( $input, $args, $mwParser )
 					case 'severity':
 					case 'priority':
 					case 'resolution':
-						$output .= sprintf($format, $color, 'center');
+						$align = ($conf['align'][$colname] ? $conf['align'][$colname] : 'center' );
+						$output .= sprintf($format, $color, $align);
 						$output .= getKeyOrValue($row[$colname], $mantis[$colname])."\n";
 						break;
 					case 'status':
-						$output .= sprintf($format, $color, 'center');
+						$align = ($conf['align'][$colname] ? $conf['align'][$colname] : 'center' );
+						$output .= sprintf($format, $color, $align);
 						$assigned = '';
 						if ($username = $row['username'])
 						{
@@ -757,7 +788,8 @@ function renderMantis( $input, $args, $mwParser )
 						$output .= sprintf("%s %s\n", getKeyOrValue($row[$colname], $mantis[$colname]), $assigned);
 						break;
 					case 'summary':
-						$output .= sprintf($format, $color, 'left');
+						$align = ($conf['align'][$colname] ? $conf['align'][$colname] : 'left' );
+						$output .= sprintf($format, $color, $align);
 						$summary = $row[$colname];
 						if ($conf['summarylength'] && (strlen($summary) > $conf['summarylength']))
 						{
@@ -767,11 +799,13 @@ function renderMantis( $input, $args, $mwParser )
 						break;
 					case 'updated':
 					case 'created':
-						$output .= sprintf($format, $color, 'left');
+						$align = ($conf['align'][$colname] ? $conf['align'][$colname] : 'left' );
+						$output .= sprintf($format, $color, $align);
 						$output .= date($conf['dateformat'], $row[$colname])."\n";
 						break;
 					default:
-						$output .= sprintf($format, $color, 'center');
+						$align = ($conf['align'][$colname] ? $conf['align'][$colname] : 'center' );
+						$output .= sprintf($format, $color, $align);
 						$output .= $row[$colname]."\n";
 						break;
 				}
@@ -809,7 +843,6 @@ function renderMantis( $input, $args, $mwParser )
 
 	$db->close();
 
-	//wfMessage("Test Message")->plain();
 	return $mwParser->recursiveTagParse($output);
 }
 ?>
