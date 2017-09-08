@@ -167,6 +167,7 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['version']          = NULL;
 	$conf['target_version']   = NULL;
 	$conf['username']         = NULL;
+	$conf['resolution']       = NULL;
 
 	$tableOptions   = array('sortable', 'standard', 'noborder');
 	$orderbyOptions = createArray($columnNames);
@@ -293,6 +294,22 @@ function renderMantis( $input, $args, $mwParser )
 				if (!empty($showNew))
 				{
 					$conf['show'] = $showNew;
+				}
+				break;
+			case 'resolution':
+				$resNew = array();
+				$columns = explode(',', $arg);
+				foreach ($columns as $column)
+				{
+					$column = trim($column);
+					if ((in_array($column, $mantis['resolution'])) !== FALSE)
+					{
+						$resNew[] = $column;
+					}
+				}
+				if (!empty($resNew))
+				{
+					$conf['resolution'] = $resNew;
 				}
 				break;
 			case 'project':
@@ -474,6 +491,18 @@ function renderMantis( $input, $args, $mwParser )
 		{
 			$severity = getKeyOrValue($conf['severity'], $mantis['severity']);
 			$query .= "and b.severity = $severity ";
+		}
+
+		if ($conf['resolution'])
+		{
+			$resolutionNumbers = array();
+			// get the numerical values for the resolution names
+			foreach ($conf['resolution'] as $res)
+			{
+				$resolutionNumbers[] = getKeyOrValue($res, $mantis['resolution']);
+			}
+			$inlist = implode(",", $resolutionNumbers);
+			$query .= "and b.resolution in ( $inlist ) ";
 		}
 
 		if ($conf['project'])
