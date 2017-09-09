@@ -265,9 +265,41 @@ function renderMantis( $input, $args, $mwParser )
 			case 'orderby':
 			case 'sortkey':
 			case 'ordermethod':
-				if (array_key_exists($arg, $orderbyOptions))
+				$tmpOrderBy = $arg;
+				$orderbyNew = array();
+				$items = explode(',', $tmpOrderBy);
+				foreach ($items as $item)
 				{
-					$conf['orderby'] = $orderbyOptions[$arg];
+					$orderby = explode(" ", $item);
+
+					// $orderby[0] = column
+					// $orderby[1] = order
+					if (array_key_exists($orderby[0], $orderbyOptions))
+					{
+						if (strtolower($orderby[1]) == 'asc' || strtolower($orderby[1]) == 'desc')
+						{
+							$rcolname = $orderbyOptions[$orderby[0]];
+							$orderbyNew[$rcolname] = strtolower($orderby[1]);
+						}
+						else
+						{
+							$rcolname = $orderbyOptions[$orderby[0]];
+							$orderbyNew[$rcolname] = '';
+						}
+					}
+				}
+				if (!empty($orderbyNew))
+				{
+					// for backwards compat, we have to check if the array has only one element without order
+					// if so, set $conf['orderby'] to the key (column reference)
+					if (count($orderbyNew) == 1 && ($key = array_search('', $orderbyNew)) != '')
+					{
+						$conf['orderby'] = $key;
+					}
+					else
+					{
+						$conf['orderby'] = $orderbyNew;
+					}
 				}
 				break;
 			case 'suppresserrors':
@@ -601,7 +633,21 @@ function renderMantis( $input, $args, $mwParser )
 			$query .= "and u.username in ( $inlist ) ";
 		}
 
-		$query .= "order by ${conf['orderby']} ${conf['order']} ";
+		if (!is_array($conf['orderby']))
+		{
+			$query .= "order by ${conf['orderby']} ${conf['order']} ";
+		}
+		else
+		{
+			$orderby = [];
+			foreach ($conf['orderby'] as $col => $order)
+			{
+				$orderby[] = "$col $order";
+			}
+			$orderlist = implode(',', $orderby);
+
+			$query .= "order by $orderlist ";
+		}
 
 		if (($conf['count'] != NULL) && $conf['count'] > 0)
 		{
@@ -621,7 +667,21 @@ function renderMantis( $input, $args, $mwParser )
 		{
 			$inlist = implode(',', $conf['bugid']);
 			$query .= "where b.id in ( $inlist ) ";
-			$query .= "order by ${conf['orderby']} ${conf['order']} ";
+			if (!is_array($conf['orderby']))
+			{
+				$query .= "order by ${conf['orderby']} ${conf['order']} ";
+			}
+			else
+			{
+				$orderby = [];
+				foreach ($conf['orderby'] as $col => $order)
+				{
+					$orderby[] = "$col $order";
+				}
+				$orderlist = implode(',', $orderby);
+
+				$query .= "order by $orderlist ";
+			}
 			if (($conf['count'] != NULL) && $conf['count'] > 0)
 			{
 				$query .= "limit ${conf['count']}";
