@@ -211,7 +211,9 @@ function renderMantis( $input, $args, $mwParser )
 	$conf['fixed_in_version']  = NULL;
 	$conf['fixed_in_versionR'] = NULL;
 	$conf['version']           = NULL;
+	$conf['versionR']          = NULL;
 	$conf['target_version']    = NULL;
+	$conf['target_versionR']   = NULL;
 	$conf['username']          = NULL;
 	$conf['resolution']        = NULL;
 	$conf['headername']        = NULL;
@@ -514,6 +516,7 @@ function renderMantis( $input, $args, $mwParser )
 		$conf['category'] = intersectArrays($db, $tabprefix, 'category_table', 'name', $tmpCategories);
 	}
 
+	// fixed_in_version processing
 	if (!empty($tmpFixedInVersions))
 	{
 		// check for range filtering first
@@ -532,18 +535,42 @@ function renderMantis( $input, $args, $mwParser )
 		}
 	}
 
-	// create version array - accept only versions that exist in the database to prevent SQL injection
-	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
+	// version processing
 	if (!empty($tmpVersions))
 	{
-		$conf['version'] = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpVersions);
+		// check for range filtering first
+		$items = explode(',', $tmpVersions);
+		$op = substr(trim($items[0]), 0, 2);
+
+		if (array_key_exists($op, $rangeOperators))
+		{
+			$conf['versionR'] = parseRanges($items, $rangeOperators);
+		}
+		else
+		{
+			// create version array - accept only versions that exist in the database to prevent SQL injection
+			// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
+			$conf['version'] = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpVersions);
+		}
 	}
 
-	// create target_version array - accept only versions that exist in the database to prevent SQL injection
-	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
+	// target_version processing
 	if (!empty($tmpTargetVersions))
 	{
-		$conf['target_version'] = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpTargetVersions);
+		// check for range filtering first
+		$items = explode(',', $tmpTargetVersions);
+		$op = substr(trim($items[0]), 0, 2);
+
+		if (array_key_exists($op, $rangeOperators))
+		{
+			$conf['target_versionR'] = parseRanges($items, $rangeOperators);
+		}
+		else
+		{
+			// create target_version array - accept only versions that exist in the database to prevent SQL injection
+			// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
+			$conf['target_version'] = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpTargetVersions);
+		}
 	}
 
 	// create username array - accept only usernames that exist in the database to prevent SQL injection
@@ -664,10 +691,38 @@ function renderMantis( $input, $args, $mwParser )
 			$query .= "and b.fixed_in_version in ( $inlist ) ";
 		}
 
+		if ($conf['versionR'])
+		{
+			$op1 = $rangeOperators[$conf['versionR'][0]['op']];
+			$val1 = $conf['versionR'][0]['val'];
+			$query .= "and b.version $op1 $val1 ";
+
+			if ($conf['versionR'][1])
+			{
+				$op2 = $rangeOperators[$conf['versionR'][1]['op']];
+				$val2 = $conf['versionR'][1]['val'];
+				$query .= "and b.version $op2 $val2 ";
+			}
+		}
+
 		if ($conf['version'])
 		{
 			$inlist = "'".implode("','", $conf['version'])."'";
 			$query .= "and b.version in ( $inlist ) ";
+		}
+
+		if ($conf['target_versionR'])
+		{
+			$op1 = $rangeOperators[$conf['target_versionR'][0]['op']];
+			$val1 = $conf['target_versionR'][0]['val'];
+			$query .= "and b.target_version $op1 $val1 ";
+
+			if ($conf['target_versionR'][1])
+			{
+				$op2 = $rangeOperators[$conf['target_versionR'][1]['op']];
+				$val2 = $conf['target_versionR'][1]['val'];
+				$query .= "and b.target_version $op2 $val2 ";
+			}
 		}
 
 		if ($conf['target_version'])
