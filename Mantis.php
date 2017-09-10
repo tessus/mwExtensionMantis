@@ -58,7 +58,7 @@ $wgMantisConf['ResolutionString'] = '10:open,20:fixed,30:reopened,40:unable to d
 // create an array from a properly formatted string
 function createArray( $string )
 {
-	$array = array();
+	$array = [];
 	$entries = explode(',', $string);
 
 	foreach ($entries as $entry)
@@ -111,8 +111,8 @@ function wfMantis( &$parser )
 // only return values from that array which also exist in the database
 function intersectArrays( $dbcontext, $prefix, $table, $column, $checkArray )
 {
-	$databaseRecords = array();
-	$newArray = array();
+	$databaseRecords = [];
+	$newArray = [];
 	$dbQuery = "select $column from ${prefix}$table";
 	if ($result = ${dbcontext}->query($dbQuery))
 	{
@@ -245,7 +245,7 @@ function renderMantis( $input, $args, $mwParser )
 		switch ($type)
 		{
 			case 'bugid':
-				$bugid = array();
+				$bugid = [];
 				$bugids = explode(',', $arg);
 				foreach ($bugids as $bug)
 				{
@@ -265,7 +265,7 @@ function renderMantis( $input, $args, $mwParser )
 				}
 				break;
 			case 'status':
-				$arrayNew = array();
+				$arrayNew = [];
 				$items = explode(',', $arg);
 				foreach ($items as $item)
 				{
@@ -314,7 +314,7 @@ function renderMantis( $input, $args, $mwParser )
 			case 'sortkey':
 			case 'ordermethod':
 				$tmpOrderBy = $arg;
-				$orderbyNew = array();
+				$orderbyNew = [];
 				$items = explode(',', $tmpOrderBy);
 				foreach ($items as $item)
 				{
@@ -367,7 +367,7 @@ function renderMantis( $input, $args, $mwParser )
 				$conf['dateformat'] = $arg;
 				break;
 			case 'show':
-				$showNew = array();
+				$showNew = [];
 				$columns = explode(',', $arg);
 				foreach ($columns as $column)
 				{
@@ -384,7 +384,7 @@ function renderMantis( $input, $args, $mwParser )
 				break;
 			case 'resolution':
 			case 'severity':
-				$arrayNew = array();
+				$arrayNew = [];
 				$items = explode(',', $arg);
 				foreach ($items as $item)
 				{
@@ -504,22 +504,14 @@ function renderMantis( $input, $args, $mwParser )
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpProjects))
 	{
-		$projectNew = intersectArrays($db, $tabprefix, 'project_table', 'name', $tmpProjects);
-		if (!empty($projectNew))
-		{
-			$conf['project'] = $projectNew;
-		}
+		$conf['project'] = intersectArrays($db, $tabprefix, 'project_table', 'name', $tmpProjects);
 	}
 
 	// create category array - accept only category names that exist in the database to prevent SQL injection
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpCategories))
 	{
-		$categoryNew = intersectArrays($db, $tabprefix, 'category_table', 'name', $tmpCategories);
-		if (!empty($categoryNew))
-		{
-			$conf['category'] = $categoryNew;
-		}
+		$conf['category'] = intersectArrays($db, $tabprefix, 'category_table', 'name', $tmpCategories);
 	}
 
 	if (!empty($tmpFixedInVersions))
@@ -544,33 +536,21 @@ function renderMantis( $input, $args, $mwParser )
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpVersions))
 	{
-		$versionNew = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpVersions);
-		if (!empty($versionNew))
-		{
-			$conf['version'] = $versionNew;
-		}
+		$conf['version'] = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpVersions);
 	}
 
 	// create target_version array - accept only versions that exist in the database to prevent SQL injection
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpTargetVersions))
 	{
-		$versionNew = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpTargetVersions);
-		if (!empty($versionNew))
-		{
-			$conf['target_version'] = $versionNew;
-		}
+		$conf['target_version'] = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpTargetVersions);
 	}
 
 	// create username array - accept only usernames that exist in the database to prevent SQL injection
 	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpUsernames))
 	{
-		$userNew = intersectArrays($db, $tabprefix, 'user_table', 'username', $tmpUsernames);
-		if (!empty($userNew))
-		{
-			$conf['username'] = $userNew;
-		}
+		$conf['username'] = intersectArrays($db, $tabprefix, 'user_table', 'username', $tmpUsernames);
 	}
 
 	// build the SQL query
@@ -612,7 +592,7 @@ function renderMantis( $input, $args, $mwParser )
 			}
 			else
 			{
-				$statusNumbers = array();
+				$statusNumbers = [];
 				// get the numerical values for status names
 				foreach ($conf['status'] as $status)
 				{
@@ -630,7 +610,7 @@ function renderMantis( $input, $args, $mwParser )
 
 		if ($conf['severity'])
 		{
-			$severityNumbers = array();
+			$severityNumbers = [];
 			// get the numerical values for severity names
 			foreach ($conf['severity'] as $sev)
 			{
@@ -642,7 +622,7 @@ function renderMantis( $input, $args, $mwParser )
 
 		if ($conf['resolution'])
 		{
-			$resolutionNumbers = array();
+			$resolutionNumbers = [];
 			// get the numerical values for resolution names
 			foreach ($conf['resolution'] as $res)
 			{
