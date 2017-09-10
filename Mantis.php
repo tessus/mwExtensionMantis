@@ -131,7 +131,52 @@ function intersectArrays( $dbcontext, $prefix, $table, $column, $checkArray )
 			$newArray[] = $item;
 		}
 	}
-	return $newArray;
+	if (!empty($newArray))
+	{
+		return $newArray;
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+function parseRanges( $items, $rangeOperators )
+{
+	$newArray = [];
+
+	$op = substr(trim($items[0]), 0, 2);
+	$val = substr(trim($items[0]), 2);
+	$val = filter_var($val, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_BACKTICK | FILTER_FLAG_ENCODE_AMP);
+	if ($val != '')
+	{
+		$newArray[0]['op'] = $op;
+		$newArray[0]['val'] = trim($val);
+		if ($items[1])
+		{
+			// a second range exists
+			$op2 = substr(trim($items[1]), 0, 2);
+			// if first op starts with g, second op has to start with l; or vice versa
+			if (($op{0} == 'g' && $op2{0} == 'l') || ($op{0} == 'l' && $op2{0} == 'g'))
+			{
+				$val2 = substr(trim($items[1]), 2);
+				$val2 = filter_var($val2, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_BACKTICK | FILTER_FLAG_ENCODE_AMP);
+				if ($val2 != '' && array_key_exists($op2, $rangeOperators))
+				{
+					$newArray[1]['op'] = $op2;
+					$newArray[1]['val'] = trim($val2);
+				}
+			}
+		}
+	}
+	if (!empty($newArray))
+	{
+		return $newArray;
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 // The callback function for converting the input text to HTML output
@@ -146,33 +191,36 @@ function renderMantis( $input, $args, $mwParser )
 
 	$columnNames = 'id:b.id,project:p.name,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary,fixed_in_version:b.fixed_in_version,version:b.version,target_version:b.target_version,resolution:b.resolution';
 
-	$conf['bugid']            = NULL;
-	$conf['table']            = 'sortable';
-	$conf['header']           = true;
-	$conf['color']            = true;
-	$conf['status']           = array('open');
-	$conf['severity']         = NULL;
-	$conf['count']            = NULL;
-	$conf['orderby']          = 'b.last_updated';
-	$conf['order']            = 'desc';
-	$conf['dateformat']       = 'Y-m-d';
-	$conf['suppresserrors']   = false;
-	$conf['suppressinfo']     = false;
-	$conf['summarylength']    = NULL;
-	$conf['project']          = NULL;
-	$conf['category']         = NULL;
-	$conf['show']             = array('id','category','severity','status','updated','summary');
-	$conf['comment']          = NULL;
-	$conf['fixed_in_version'] = NULL;
-	$conf['version']          = NULL;
-	$conf['target_version']   = NULL;
-	$conf['username']         = NULL;
-	$conf['resolution']       = NULL;
-	$conf['headername']       = NULL;
-	$conf['align']            = NULL;
+	$conf['bugid']             = NULL;
+	$conf['table']             = 'sortable';
+	$conf['header']            = true;
+	$conf['color']             = true;
+	$conf['status']            = ['open'];
+	$conf['severity']          = NULL;
+	$conf['count']             = NULL;
+	$conf['orderby']           = 'b.last_updated';
+	$conf['order']             = 'desc';
+	$conf['dateformat']        = 'Y-m-d';
+	$conf['suppresserrors']    = false;
+	$conf['suppressinfo']      = false;
+	$conf['summarylength']     = NULL;
+	$conf['project']           = NULL;
+	$conf['category']          = NULL;
+	$conf['show']              = ['id','category','severity','status','updated','summary'];
+	$conf['comment']           = NULL;
+	$conf['fixed_in_version']  = NULL;
+	$conf['fixed_in_versionR'] = NULL;
+	$conf['version']           = NULL;
+	$conf['target_version']    = NULL;
+	$conf['username']          = NULL;
+	$conf['resolution']        = NULL;
+	$conf['headername']        = NULL;
+	$conf['align']             = NULL;
 
-	$tableOptions   = array('sortable', 'standard', 'noborder');
+	$tableOptions   = ['sortable', 'standard', 'noborder'];
 	$orderbyOptions = createArray($columnNames);
+
+	$rangeOperators = ['gt' => '>', 'ge' => '>=', 'lt' => '<', 'le' => '<='];
 
 	$mantis['status']     = createArray($wgMantisConf['StatusString']);
 	$mantis['color']      = createArray($wgMantisConf['StatusColors']);
@@ -474,14 +522,21 @@ function renderMantis( $input, $args, $mwParser )
 		}
 	}
 
-	// create fixed_in_version array - accept only versions that exist in the database to prevent SQL injection
-	// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
 	if (!empty($tmpFixedInVersions))
 	{
-		$versionNew = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpFixedInVersions);
-		if (!empty($versionNew))
+		// check for range filtering first
+		$items = explode(',', $tmpFixedInVersions);
+		$op = substr(trim($items[0]), 0, 2);
+
+		if (array_key_exists($op, $rangeOperators))
 		{
-			$conf['fixed_in_version'] = $versionNew;
+			$conf['fixed_in_versionR'] = parseRanges($items, $rangeOperators);
+		}
+		else
+		{
+			// create fixed_in_version array - accept only versions that exist in the database to prevent SQL injection
+			// this check decreases performance a tiny bit, because we have to make another db call. but security comes first!
+			$conf['fixed_in_version'] = intersectArrays($db, $tabprefix, 'project_version_table', 'version', $tmpFixedInVersions);
 		}
 	}
 
@@ -607,6 +662,20 @@ function renderMantis( $input, $args, $mwParser )
 		{
 			$inlist = "'".implode("','", $conf['category'])."'";
 			$query .= "and c.name in ( $inlist ) ";
+		}
+
+		if ($conf['fixed_in_versionR'])
+		{
+			$op1 = $rangeOperators[$conf['fixed_in_versionR'][0]['op']];
+			$val1 = $conf['fixed_in_versionR'][0]['val'];
+			$query .= "and b.fixed_in_version $op1 $val1 ";
+
+			if ($conf['fixed_in_versionR'][1])
+			{
+				$op2 = $rangeOperators[$conf['fixed_in_versionR'][1]['op']];
+				$val2 = $conf['fixed_in_versionR'][1]['val'];
+				$query .= "and b.fixed_in_version $op2 $val2 ";
+			}
 		}
 
 		if ($conf['fixed_in_version'])
