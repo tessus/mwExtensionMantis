@@ -37,7 +37,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'url'          => 'https://www.mediawiki.org/wiki/Extension:Mantis',
 	'description'  => 'Mantis Bug Tracker integration',
 	'license-name' => 'GPL-2.0+',
-	'version'      => '2.0'
+	'version'      => '2.0.1'
 );
 
 // Configuration variables
@@ -114,7 +114,7 @@ function intersectArrays( $dbcontext, $prefix, $table, $column, $checkArray )
 	$databaseRecords = [];
 	$newArray = [];
 	$dbQuery = "select $column from ${prefix}$table";
-	if ($result = ${dbcontext}->query($dbQuery))
+	if ($result = $dbcontext->query($dbQuery))
 	{
 		while ($row = $result->fetch_assoc())
 		{
