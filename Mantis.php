@@ -37,7 +37,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'url'          => 'https://www.mediawiki.org/wiki/Extension:Mantis',
 	'description'  => 'Mantis Bug Tracker integration',
 	'license-name' => 'GPL-2.0+',
-	'version'      => '2.0.2'
+	'version'      => '2.0.3'
 );
 
 // Configuration variables
@@ -315,18 +315,18 @@ function renderMantis( $input, $args, $mwParser )
 			case 'orderby':
 			case 'sortkey':
 			case 'ordermethod':
-				$tmpOrderBy = $arg;
+				$tmpOrderBy = trim($arg);
 				$orderbyNew = [];
 				$items = explode(',', $tmpOrderBy);
 				foreach ($items as $item)
 				{
-					$orderby = explode(" ", $item);
+					$orderby = explode(" ", trim($item));
 
 					// $orderby[0] = column
 					// $orderby[1] = order
 					if (array_key_exists($orderby[0], $orderbyOptions))
 					{
-						if (strtolower($orderby[1]) == 'asc' || strtolower($orderby[1]) == 'desc')
+						if (isset($orderby[1]) && (strtolower($orderby[1]) == 'asc' || strtolower($orderby[1]) == 'desc'))
 						{
 							$rcolname = $orderbyOptions[$orderby[0]];
 							$orderbyNew[$rcolname] = strtolower($orderby[1]);
