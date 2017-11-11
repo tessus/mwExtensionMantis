@@ -37,7 +37,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'url'          => 'https://www.mediawiki.org/wiki/Extension:Mantis',
 	'description'  => 'Mantis Bug Tracker integration',
 	'license-name' => 'GPL-2.0+',
-	'version'      => '2.0.1'
+	'version'      => '2.0.2'
 );
 
 // Configuration variables
@@ -1010,9 +1010,9 @@ function renderMantis( $input, $args, $mwParser )
 			{
 				$output .= sprintf($format, $color, 'left');
 
-				if (array_key_exists($row[id], $conf['comment']))
+				if (array_key_exists($row['id'], $conf['comment']))
 				{
-					$output .= $conf['comment'][$row[id]]."\n";
+					$output .= $conf['comment'][$row['id']]."\n";
 				}
 				else
 				{
