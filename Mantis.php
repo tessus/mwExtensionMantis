@@ -37,7 +37,7 @@ $wgExtensionCredits['parserhook'][] = array(
 	'url'          => 'https://www.mediawiki.org/wiki/Extension:Mantis',
 	'description'  => 'Mantis Bug Tracker integration',
 	'license-name' => 'GPL-2.0+',
-	'version'      => '2.0.3'
+	'version'      => '2.1.0'
 );
 
 // Configuration variables
@@ -191,33 +191,34 @@ function renderMantis( $input, $args, $mwParser )
 
 	$columnNames = 'id:b.id,project:p.name,category:c.name,severity:b.severity,priority:b.priority,status:b.status,username:u.username,created:b.date_submitted,updated:b.last_updated,summary:b.summary,fixed_in_version:b.fixed_in_version,version:b.version,target_version:b.target_version,resolution:b.resolution';
 
-	$conf['bugid']             = NULL;
-	$conf['table']             = 'sortable';
-	$conf['header']            = true;
-	$conf['color']             = true;
-	$conf['status']            = ['open'];
-	$conf['severity']          = NULL;
-	$conf['count']             = NULL;
-	$conf['orderby']           = 'b.last_updated';
-	$conf['order']             = 'desc';
-	$conf['dateformat']        = 'Y-m-d';
-	$conf['suppresserrors']    = false;
-	$conf['suppressinfo']      = false;
-	$conf['summarylength']     = NULL;
-	$conf['project']           = NULL;
-	$conf['category']          = NULL;
-	$conf['show']              = ['id','category','severity','status','updated','summary'];
-	$conf['comment']           = NULL;
-	$conf['fixed_in_version']  = NULL;
-	$conf['fixed_in_versionR'] = NULL;
-	$conf['version']           = NULL;
-	$conf['versionR']          = NULL;
-	$conf['target_version']    = NULL;
-	$conf['target_versionR']   = NULL;
-	$conf['username']          = NULL;
-	$conf['resolution']        = NULL;
-	$conf['headername']        = NULL;
-	$conf['align']             = NULL;
+	$conf['bugid']              = NULL;
+	$conf['table']              = 'sortable';
+	$conf['header']             = true;
+	$conf['color']              = true;
+	$conf['status']             = ['open'];
+	$conf['severity']           = NULL;
+	$conf['count']              = NULL;
+	$conf['orderby']            = 'b.last_updated';
+	$conf['order']              = 'desc';
+	$conf['dateformat']         = 'Y-m-d';
+	$conf['suppresserrors']     = false;
+	$conf['suppressinfo']       = false;
+	$conf['summarylength']      = NULL;
+	$conf['project']            = NULL;
+	$conf['category']           = NULL;
+	$conf['show']               = ['id','category','severity','status','updated','summary'];
+	$conf['comment']            = NULL;
+	$conf['fixed_in_version']   = NULL;
+	$conf['fixed_in_versionR']  = NULL;
+	$conf['version']            = NULL;
+	$conf['versionR']           = NULL;
+	$conf['target_version']     = NULL;
+	$conf['target_versionR']    = NULL;
+	$conf['username']           = NULL;
+	$conf['resolution']         = NULL;
+	$conf['headername']         = NULL;
+	$conf['align']              = NULL;
+	$conf['summary_as_comment'] = false;
 
 	$tableOptions   = ['sortable', 'standard', 'noborder'];
 	$orderbyOptions = createArray($columnNames);
@@ -356,6 +357,7 @@ function renderMantis( $input, $args, $mwParser )
 			case 'suppressinfo':
 			case 'color':
 			case 'header':
+			case 'summary_as_comment':
 				if ($arg == 'true' || $arg == 'yes' || $arg == 'on')
 				{
 					$conf["$type"] = true;
@@ -928,7 +930,7 @@ function renderMantis( $input, $args, $mwParser )
 				$header = ($conf['headername'][$colname] ? $conf['headername'][$colname] : ucfirst($colname));
 				$output .= "!".ucfirst($header)."\n";
 			}
-			if (!empty($conf['comment']))
+			if (!empty($conf['comment']) || $conf['summary_as_comment'])
 			{
 				$output .= "!Comment\n";
 			}
@@ -1006,18 +1008,24 @@ function renderMantis( $input, $args, $mwParser )
 						break;
 				}
 			}
-			if (!empty($conf['comment']))
+			if (!empty($conf['comment']) || $conf['summary_as_comment'])
 			{
+				$comment = '';
 				$output .= sprintf($format, $color, 'left');
 
+				if ($conf['summary_as_comment'])
+				{
+					$comment = $row['summary'];
+					if ($conf['summarylength'] && (strlen($comment) > $conf['summarylength']))
+					{
+						$comment = trim(substr($row['summary'], 0, $conf['summarylength']))."...";
+					}
+				}
 				if (array_key_exists($row['id'], $conf['comment']))
 				{
-					$output .= $conf['comment'][$row['id']]."\n";
+					$comment = $conf['comment'][$row['id']];
 				}
-				else
-				{
-					$output .= "\n";
-				}
+				$output .= $comment."\n";
 			}
 		}
 		// create table end
