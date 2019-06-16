@@ -1021,7 +1021,7 @@ function renderMantis( $input, $args, $mwParser )
 						$comment = trim(substr($row['summary'], 0, $conf['summarylength']))."...";
 					}
 				}
-				if (array_key_exists($row['id'], $conf['comment']))
+				if ($conf['comment'] && array_key_exists($row['id'], $conf['comment']))
 				{
 					$comment = $conf['comment'][$row['id']];
 				}
