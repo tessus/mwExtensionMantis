@@ -4,7 +4,7 @@
  *
  * Mantis Bug Tracker integration
  *
- * Written by Helmut K. C. Tessarek
+ * Copyright (c) 2014 Helmut K. C. Tessarek
  *
  * https://www.mediawiki.org/wiki/Extension:Mantis
  * https://github.com/tessus/mwExtensionMantis
