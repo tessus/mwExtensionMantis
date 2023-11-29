@@ -923,11 +923,11 @@ function renderMantis( $input, $args, $mwParser )
 		$output = '{| class="wikitable sortable"'."\n";
 
 		// create table header - use an array to specify which columns to display
-		if ($conf['header'])
+		if ($conf['header'] && isset($conf['show']) && is_array($conf['show'])) 
 		{
 			foreach ($conf['show'] as $colname)
 			{
-				$header = ($conf['headername'][$colname] ? $conf['headername'][$colname] : ucfirst($colname));
+				$header = (isset($conf['headername']) && isset($conf['headername'][$colname])) ? $conf['headername'][$colname] : ucfirst($colname);
 				$output .= "!".ucfirst($header)."\n";
 			}
 			if (!empty($conf['comment']) || $conf['summary_as_comment'])
@@ -957,7 +957,7 @@ function renderMantis( $input, $args, $mwParser )
 				switch ($colname)
 				{
 					case 'id':
-						$align = ($conf['align'][$colname] ? $conf['align'][$colname] : 'center' );
+						$align = (isset($conf['align']) && isset($conf['align'][$colname]) ? $conf['align'][$colname] : 'center');
 						$output .= sprintf($format, $color, $align);
 						if ($link)
 						{
@@ -971,12 +971,12 @@ function renderMantis( $input, $args, $mwParser )
 					case 'severity':
 					case 'priority':
 					case 'resolution':
-						$align = ($conf['align'][$colname] ? $conf['align'][$colname] : 'center' );
+						$align = (isset($conf['align']) && isset($conf['align'][$colname]) ? $conf['align'][$colname] : 'center');
 						$output .= sprintf($format, $color, $align);
 						$output .= getKeyOrValue($row[$colname], $mantis[$colname])."\n";
 						break;
 					case 'status':
-						$align = ($conf['align'][$colname] ? $conf['align'][$colname] : 'center' );
+						$align = (isset($conf['align']) && isset($conf['align'][$colname]) ? $conf['align'][$colname] : 'center');
 						$output .= sprintf($format, $color, $align);
 						$assigned = '';
 						if ($username = $row['username'])
@@ -986,7 +986,7 @@ function renderMantis( $input, $args, $mwParser )
 						$output .= sprintf("%s %s\n", getKeyOrValue($row[$colname], $mantis[$colname]), $assigned);
 						break;
 					case 'summary':
-						$align = ($conf['align'][$colname] ? $conf['align'][$colname] : 'left' );
+						$align = (isset($conf['align']) && isset($conf['align'][$colname]) ? $conf['align'][$colname] : 'left');
 						$output .= sprintf($format, $color, $align);
 						$summary = $row[$colname];
 						if ($conf['summarylength'] && (strlen($summary) > $conf['summarylength']))
@@ -997,12 +997,12 @@ function renderMantis( $input, $args, $mwParser )
 						break;
 					case 'updated':
 					case 'created':
-						$align = ($conf['align'][$colname] ? $conf['align'][$colname] : 'left' );
+						$align = (isset($conf['align']) && isset($conf['align'][$colname]) ? $conf['align'][$colname] : 'left');
 						$output .= sprintf($format, $color, $align);
 						$output .= date($conf['dateformat'], $row[$colname])."\n";
 						break;
 					default:
-						$align = ($conf['align'][$colname] ? $conf['align'][$colname] : 'center' );
+						$align = (isset($conf['align']) && isset($conf['align'][$colname]) ? $conf['align'][$colname] : 'center');
 						$output .= sprintf($format, $color, $align);
 						$output .= $row[$colname]."\n";
 						break;
