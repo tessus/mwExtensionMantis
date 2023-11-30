@@ -1,0 +1,7 @@
+*.save
+*.new
+*~
+*.swp
+*.conf
+*.patch
+*.orig
