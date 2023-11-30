@@ -956,7 +956,7 @@ function renderMantis( $input, $args, $mwParser )
 				switch ($colname)
 				{
 					case 'id':
-						$align =  $conf['align'][$colname] ?? 'center';
+						$align = $conf['align'][$colname] ?? 'center';
 						$output .= sprintf($format, $color, $align);
 						if ($link)
 						{
@@ -970,12 +970,12 @@ function renderMantis( $input, $args, $mwParser )
 					case 'severity':
 					case 'priority':
 					case 'resolution':
-						$align =  $conf['align'][$colname] ?? 'center';
+						$align = $conf['align'][$colname] ?? 'center';
 						$output .= sprintf($format, $color, $align);
 						$output .= getKeyOrValue($row[$colname], $mantis[$colname])."\n";
 						break;
 					case 'status':
-						$align =  $conf['align'][$colname] ?? 'center';
+						$align = $conf['align'][$colname] ?? 'center';
 						$output .= sprintf($format, $color, $align);
 						$assigned = '';
 						if ($username = $row['username'])
@@ -985,7 +985,7 @@ function renderMantis( $input, $args, $mwParser )
 						$output .= sprintf("%s %s\n", getKeyOrValue($row[$colname], $mantis[$colname]), $assigned);
 						break;
 					case 'summary':
-						$align =  $conf['align'][$colname] ?? 'left';
+						$align = $conf['align'][$colname] ?? 'left';
 						$output .= sprintf($format, $color, $align);
 						$summary = $row[$colname];
 						if ($conf['summarylength'] && (strlen($summary) > $conf['summarylength']))
@@ -996,12 +996,12 @@ function renderMantis( $input, $args, $mwParser )
 						break;
 					case 'updated':
 					case 'created':
-						$align =  $conf['align'][$colname] ?? 'left';
+						$align = $conf['align'][$colname] ?? 'left';
 						$output .= sprintf($format, $color, $align);
 						$output .= date($conf['dateformat'], $row[$colname])."\n";
 						break;
 					default:
-						$align =  $conf['align'][$colname] ?? 'center';
+						$align = $conf['align'][$colname] ?? 'center';
 						$output .= sprintf($format, $color, $align);
 						$output .= $row[$colname]."\n";
 						break;
