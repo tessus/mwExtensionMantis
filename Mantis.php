@@ -157,7 +157,7 @@ function parseRanges( $items, $rangeOperators )
 			// a second range exists
 			$op2 = substr(trim($items[1]), 0, 2);
 			// if first op starts with g, second op has to start with l; or vice versa
-			if (($op{0} == 'g' && $op2{0} == 'l') || ($op{0} == 'l' && $op2{0} == 'g'))
+			if (($op[0] == 'g' && $op2[0] == 'l') || ($op[0] == 'l' && $op2[0] == 'g'))
 			{
 				$val2 = substr(trim($items[1]), 2);
 				$val2 = filter_var($val2, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_BACKTICK | FILTER_FLAG_ENCODE_AMP);
